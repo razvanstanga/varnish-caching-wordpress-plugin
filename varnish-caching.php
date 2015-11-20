@@ -1,22 +1,22 @@
 <?php
 /*
-Plugin Name: Varnish Cacheing
-Plugin URI: http://wordpress.org/extend/plugins/varnish-cacheing/
+Plugin Name: Varnish Caching
+Plugin URI: http://wordpress.org/extend/plugins/varnish-caching/
 Description: Sends purge requests to URLs of changed posts/pages when they are modified.
 Version: 1.0
 Author: Razvan Stanga
 Author URI: http://git.razvi.ro/
 License: http://www.apache.org/licenses/LICENSE-2.0
-Text Domain: varnish-cacheing
+Text Domain: varnish-caching
 Network: true
 
-Copyright 2015: Razvan Stanga (email: varnish-cacheing@razvi.ro)
+Copyright 2015: Razvan Stanga (email: varnish-caching@razvi.ro)
 */
 
-class VarnishCacheing {
+class VarnishCaching {
     protected $blogId;
-    protected $plugin = 'varnish-cacheing';
-    protected $prefix = 'varnish_cacheing_';
+    protected $plugin = 'varnish-caching';
+    protected $prefix = 'varnish_caching_';
     protected $purgeUrls = array();
     protected $varnishIp = null;
     protected $varnishHost = null;
@@ -24,7 +24,7 @@ class VarnishCacheing {
     protected $ipsToHosts = array();
     protected $purgeKey = null;
     protected $getParam = 'purge_varnish_cache';
-    protected $debugMessage = '';
+    protected $noticeMessage = '';
     protected $postTypes = array('page', 'post');
     protected $override = 0;
     protected $customFields = array();
@@ -43,7 +43,7 @@ class VarnishCacheing {
             array(
                 'name'          => 'ttl',
                 'title'         => 'TTL',
-                'description'   => __('Not required. If filled in overrides default TTL of %s seconds. 0 means no cacheing.', $this->plugin),
+                'description'   => __('Not required. If filled in overrides default TTL of %s seconds. 0 means no caching.', $this->plugin),
                 'type'          => 'text',
                 'scope'         =>  array('post', 'page'),
                 'capability'    => 'manage_options'
@@ -196,7 +196,7 @@ class VarnishCacheing {
 
     public function purge_message()
     {
-        echo '<div id="message" class="updated fade"><p><strong>' . __('Varnish message:', $this->plugin) . '</strong><br />' . $this->debugMessage . '</p></div>';
+        echo '<div id="message" class="updated fade"><p><strong>' . __('Varnish message:', $this->plugin) . '</strong><br />' . $this->noticeMessage . '</p></div>';
     }
 
     public function purge_message_no_ips()
@@ -206,7 +206,7 @@ class VarnishCacheing {
 
     public function pretty_permalinks_message()
     {
-        echo '<div id="message" class="error"><p>' . __('Varnish Cacheing requires you to use custom permalinks. Please go to the <a href="options-permalink.php">Permalinks Options Page</a> to configure them.', $this->plugin) . '</p></div>';
+        echo '<div id="message" class="error"><p>' . __('Varnish Caching requires you to use custom permalinks. Please go to the <a href="options-permalink.php">Permalinks Options Page</a> to configure them.', $this->plugin) . '</p></div>';
     }
 
     public function purge_varnish_cache_all_adminbar($admin_bar)
@@ -227,9 +227,9 @@ class VarnishCacheing {
         $button = '';
         $nopermission = '';
         if ($this->varnishIp == null) {
-            $intro .= sprintf(__('Please setup Varnish IPs to be able to use <a href="%1$s">Varnish Cacheing</a>.', $this->plugin), 'http://wordpress.org/plugins/varnish-cacheing/');
+            $intro .= sprintf(__('Please setup Varnish IPs to be able to use <a href="%1$s">Varnish Caching</a>.', $this->plugin), 'http://wordpress.org/plugins/varnish-caching/');
         } else {
-            $intro .= sprintf(__('<a href="%1$s">Varnish Cacheing</a> automatically purges your posts when published or updated. Sometimes you need a manual flush.', $this->plugin), 'http://wordpress.org/plugins/varnish-cacheing/');
+            $intro .= sprintf(__('<a href="%1$s">Varnish Caching</a> automatically purges your posts when published or updated. Sometimes you need a manual flush.', $this->plugin), 'http://wordpress.org/plugins/varnish-caching/');
             $button .=  __('Press the button below to force it to purge your entire cache.', $this->plugin);
             $button .= '</p><p><span class="button"><a href="' . $url . '"><strong>';
             $button .= __('Purge Varnish', $this->plugin);
@@ -298,15 +298,17 @@ class VarnishCacheing {
             $response = wp_remote_request($purgeme, array('method' => 'PURGE', 'headers' => $headers));
             if ($response instanceof WP_Error) {
                 foreach ($response->errors as $error => $errors) {
-                    $this->debugMessage .= '<br />Error ' . $error . '<br />';
+                    $this->noticeMessage .= '<br />Error ' . $error . '<br />';
                     foreach ($errors as $error => $description) {
-                        $this->debugMessage .= ' - ' . $description . '<br />';
+                        $this->noticeMessage .= ' - ' . $description . '<br />';
                     }
                 }
             } else {
-                $this->debugMessage .= '<br />Trying to purge URL : ' . $purgeme;
+                $this->noticeMessage .= '<br />Trying to purge URL : ' . $purgeme;
                 if ($this->debug) {
-                    $this->debugMessage .= ' => <br /> ' . $response['body'];
+                    $message = preg_match("/<title>(.*)<\/title>/i", $response['body'], $matches);
+                    $this->noticeMessage .= ' => <br /> ' . isset($matches[1]) ? " => " . $matches[1] : $response['body'];
+                    $this->noticeMessage .= '<br />';
                 }
             }
         }
@@ -413,14 +415,14 @@ class VarnishCacheing {
 
     public function add_menu_item()
     {
-        add_menu_page(__('Varnish Cacheing', $this->plugin), __('Varnish Cacheing', $this->plugin), 'manage_options', $this->plugin . '-options', array($this, 'settings_page'), null, 99);
+        add_menu_page(__('Varnish Caching', $this->plugin), __('Varnish Caching', $this->plugin), 'manage_options', $this->plugin . '-options', array($this, 'settings_page'), home_url() . '/wp-content/plugins/' . $this->plugin . '/icon.png', 99);
     }
 
     public function settings_page()
     {
     ?>
         <div class="wrap">
-        <h1><?=__('Varnish Cacheing Options', $this->plugin)?></h1>
+        <h1><?=__('Varnish Caching Options', $this->plugin)?></h1>
         <form method="post" action="options.php">
             <?php
                 settings_fields('section');
@@ -457,74 +459,74 @@ class VarnishCacheing {
         register_setting("section", $this->prefix . "debug");
     }
 
-    public function varnish_cacheing_enable()
+    public function varnish_caching_enable()
     {
         ?>
-            <input type="checkbox" name="varnish_cacheing_enable" value="1" <?php checked(1, get_option($this->prefix . 'enable'), true); ?> />
-            <p class="description"><?=__('Enable Varnish cacheing', $this->plugin)?></p>
+            <input type="checkbox" name="varnish_caching_enable" value="1" <?php checked(1, get_option($this->prefix . 'enable'), true); ?> />
+            <p class="description"><?=__('Enable Varnish caching', $this->plugin)?></p>
         <?php
     }
 
-    public function varnish_cacheing_ttl()
+    public function varnish_caching_ttl()
     {
         ?>
-            <input type="text" name="varnish_cacheing_ttl" id="varnish_cacheing_ttl" value="<?php echo get_option($this->prefix . 'ttl'); ?>" />
+            <input type="text" name="varnish_caching_ttl" id="varnish_caching_ttl" value="<?php echo get_option($this->prefix . 'ttl'); ?>" />
             <p class="description"><?=__('Time to live in seconds in Varnish cache', $this->plugin)?></p>
         <?php
     }
 
-    public function varnish_cacheing_ips()
+    public function varnish_caching_ips()
     {
         ?>
-            <input type="text" name="varnish_cacheing_ips" id="varnish_cacheing_ips" size="100" value="<?php echo get_option($this->prefix . 'ips'); ?>" />
+            <input type="text" name="varnish_caching_ips" id="varnish_caching_ips" size="100" value="<?php echo get_option($this->prefix . 'ips'); ?>" />
             <p class="description"><?=__('Comma separated ip/ip:port. Example : 192.168.0.2,192.168.0.3:8080', $this->plugin)?></p>
         <?php
     }
 
-    public function varnish_cacheing_dynamic_host()
+    public function varnish_caching_dynamic_host()
     {
         ?>
-            <input type="checkbox" name="varnish_cacheing_dynamic_host" value="1" <?php checked(1, get_option($this->prefix . 'dynamic_host'), true); ?> />
+            <input type="checkbox" name="varnish_caching_dynamic_host" value="1" <?php checked(1, get_option($this->prefix . 'dynamic_host'), true); ?> />
             <p class="description">
                 <?=__('Uses the $_SERVER[\'HTTP_HOST\'] as hash for Varnish. This means the purge cache action will work on the domain you\'re on.<br />Use this option if you use only one domain.', $this->plugin)?>
             </p>
         <?php
     }
 
-    public function varnish_cacheing_hosts()
+    public function varnish_caching_hosts()
     {
         ?>
-            <input type="text" name="varnish_cacheing_hosts" id="varnish_cacheing_hosts" size="100" value="<?php echo get_option($this->prefix . 'hosts'); ?>" />
+            <input type="text" name="varnish_caching_hosts" id="varnish_caching_hosts" size="100" value="<?php echo get_option($this->prefix . 'hosts'); ?>" />
             <p class="description">
                 <?=__('Comma separated hostnames. Varnish uses the hostname to create the cache hash. For each IP, you must set a hostname.<br />Use this option if you use multiple domains.', $this->plugin)?>
             </p>
         <?php
     }
 
-    public function varnish_cacheing_override()
+    public function varnish_caching_override()
     {
         ?>
-            <input type="checkbox" name="varnish_cacheing_override" value="1" <?php checked(1, get_option($this->prefix . 'override'), true); ?> />
+            <input type="checkbox" name="varnish_caching_override" value="1" <?php checked(1, get_option($this->prefix . 'override'), true); ?> />
             <p class="description"><?=__('Override default TTL on each post/page.', $this->plugin)?></p>
         <?php
     }
 
-    public function varnish_cacheing_purge_key()
+    public function varnish_caching_purge_key()
     {
         ?>
-            <input type="text" name="varnish_cacheing_purge_key" id="varnish_cacheing_purge_key" size="100" value="<?php echo get_option($this->prefix . 'purge_key'); ?>" />
+            <input type="text" name="varnish_caching_purge_key" id="varnish_caching_purge_key" size="100" value="<?php echo get_option($this->prefix . 'purge_key'); ?>" />
             <p class="description">
                 <?=__('Key used to purge Varnish cache. It is sent to Varnish as X-VC-Purge-Key header. Use a SHA-256 hash.<br />if you can\'t use ACL\'s, use this option.', $this->plugin)?>
             </p>
         <?php
     }
 
-    public function varnish_cacheing_debug()
+    public function varnish_caching_debug()
     {
         ?>
-            <input type="checkbox" name="varnish_cacheing_debug" value="1" <?php checked(1, get_option($this->prefix . 'debug'), true); ?> />
+            <input type="checkbox" name="varnish_caching_debug" value="1" <?php checked(1, get_option($this->prefix . 'debug'), true); ?> />
         <?php
     }
 }
 
-$purger = new VarnishCacheing();
+$purger = new VarnishCaching();
