@@ -305,10 +305,11 @@ class VarnishCaching {
                 }
             } else {
                 $this->noticeMessage .= '<br />Trying to purge URL : ' . $purgeme;
+                $message = preg_match("/<title>(.*)<\/title>/i", $response['body'], $matches);
+                $this->noticeMessage .= ' => <br /> ' . isset($matches[1]) ? " => " . $matches[1] : $response['body'];
+                $this->noticeMessage .= '<br />';
                 if ($this->debug) {
-                    $message = preg_match("/<title>(.*)<\/title>/i", $response['body'], $matches);
-                    $this->noticeMessage .= ' => <br /> ' . isset($matches[1]) ? " => " . $matches[1] : $response['body'];
-                    $this->noticeMessage .= '<br />';
+                    $this->noticeMessage .= $response['body'] . "<br />";
                 }
             }
         }
@@ -516,7 +517,7 @@ class VarnishCaching {
         ?>
             <input type="text" name="varnish_caching_purge_key" id="varnish_caching_purge_key" size="100" value="<?php echo get_option($this->prefix . 'purge_key'); ?>" />
             <p class="description">
-                <?=__('Key used to purge Varnish cache. It is sent to Varnish as X-VC-Purge-Key header. Use a SHA-256 hash.<br />if you can\'t use ACL\'s, use this option.', $this->plugin)?>
+                <?=__('Key used to purge Varnish cache. It is sent to Varnish as X-VC-Purge-Key header. Use a SHA-256 hash.<br />If you can\'t use ACL\'s, use this option.', $this->plugin)?>
             </p>
         <?php
     }
