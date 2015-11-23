@@ -59,13 +59,13 @@ class VarnishCaching {
     {
         load_plugin_textdomain($this->plugin);
 
-        add_action('wp', array($this, 'buffer_start'));
-        add_action('shutdown', array($this, 'buffer_end'));
+        add_action('wp', array($this, 'buffer_start'), 1000000);
+        add_action('shutdown', array($this, 'buffer_end'), 1000000);
 
         $this->debug = get_option($this->prefix . 'debug');
 
         // send headers to varnish
-        add_action('send_headers', array($this, 'send_headers'));
+        add_action('send_headers', array($this, 'send_headers'), 1000000);
 
         // register events to purge post
         foreach ($this->getRegisterEvents() as $event) {
@@ -91,8 +91,8 @@ class VarnishCaching {
             add_action('admin_menu', array($this, 'createCustomFields'));
             add_action('save_post', array($this, 'saveCustomFields' ), 1, 2);
         }
-        add_action('wp_enqueue_scripts', array($this, 'override_ttl'));
-        add_action('wp_enqueue_scripts', array($this, 'override_homepage_ttl'));
+        add_action('wp_enqueue_scripts', array($this, 'override_ttl'), 1000);
+        add_action('wp_enqueue_scripts', array($this, 'override_homepage_ttl'), 1000);
     }
 
     public function override_ttl($post)
@@ -100,7 +100,7 @@ class VarnishCaching {
         $postId = isset($GLOBALS['wp_the_query']->post->ID) ? $GLOBALS['wp_the_query']->post->ID : 0;
         if ($postId && (is_page() || is_single())) {
             $ttl = get_post_meta($postId, $this->prefix . 'ttl', true);
-            Header('Cache-Control: max-age=' . $ttl, true);
+            Header('X-VC-TTL: ' . $ttl, true);
         }
     }
 
@@ -108,19 +108,22 @@ class VarnishCaching {
     {
         if (is_home() || is_front_page()) {
             $this->homepage_ttl = get_option($this->prefix . 'homepage_ttl');
-            Header('Cache-Control: max-age=' . $this->homepage_ttl, true);
+            Header('X-VC-TTL: ' . $this->homepage_ttl, true);
         }
     }
 
-    public function callback($buffer) {
+    public function buffer_callback($buffer)
+    {
         return $buffer;
     }
 
-    public function buffer_start() {
-        ob_start(array($this, "callback"));
+    public function buffer_start()
+    {
+        ob_start(array($this, "buffer_callback"));
     }
 
-    public function buffer_end() {
+    public function buffer_end()
+    {
         ob_end_flush();
     }
 
@@ -168,7 +171,7 @@ class VarnishCaching {
         }
     }
 
-    function displayCustomFields()
+    public function displayCustomFields()
     {
         global $post;
         ?>
@@ -433,12 +436,14 @@ class VarnishCaching {
     {
         $enable = get_option($this->prefix . 'enable');
         if ($enable) {
-            Header('X-VC-Enabled: true');
+            Header('X-VC-Enabled: true', true);
             $ttl = get_option($this->prefix . 'ttl');
-            Header('Cache-Control: max-age=' . $ttl);
+            Header('X-VC-TTL: ' . $ttl, true);
             if ($debug = get_option($this->prefix . 'debug')) {
-                Header('X-VC-Debug: true');
+                Header('X-VC-Debug: true', true);
             }
+        } else {
+            Header('X-VC-Enabled: false', true);
         }
     }
 

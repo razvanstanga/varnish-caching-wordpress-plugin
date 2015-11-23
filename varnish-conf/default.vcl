@@ -49,15 +49,18 @@ sub vcl_recv {
     if (req.request != "GET" && req.request != "HEAD") {
         return(pass);
     }
+
     # don't cache logged-in users or authors
     if (req.http.Cookie ~ "wp-postpass_|wordpress_logged_in_|comment_author|PHPSESSID") {
         set req.http.X-VC-GotSession = "true";
         return(pass);
     }
+
     # don't cache ajax requests
     if (req.http.X-Requested-With == "XMLHttpRequest") {
         return(pass);
     }
+
     # don't cache these special pages
     if (req.url ~ "nocache|wp-admin|wp-(comments-post|login|activate|mail)\.php|bb-admin|server-status|control\.php|bb-login\.php|bb-reset-password\.php|register\.php") {
         return(pass);
@@ -97,7 +100,8 @@ sub vcl_fetch {
         set beresp.grace = 2m;
     }
 
-    set beresp.http.X-VC-TTL = beresp.ttl;
+    # overwrite ttl with X-VC-TTL
+    set beresp.ttl = std.duration(beresp.http.X-VC-TTL + "s", 0s);
 
     # catch obvious reasons we can't cache
     if (beresp.http.Set-Cookie) {
