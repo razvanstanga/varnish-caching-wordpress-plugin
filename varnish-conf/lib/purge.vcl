@@ -1,3 +1,4 @@
+# purge.vcl -- Cache Purge Library for Varnish
 
 # Regex purging
 # Treat the request URL as a regular expression.

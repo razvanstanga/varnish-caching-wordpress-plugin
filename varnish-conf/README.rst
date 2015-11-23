@@ -101,6 +101,9 @@ controlled with the X-Purge-Method HTTP header.  This config will be smart
 and attempt to automatically pick the best method based on the URL if you
 don't use an X-Purge-Method header.  See the comments in `lib/purge.vcl` for
 details.
+You can also use the X-VC-Purge-Key method. Generate a MD5/SHA-256 hash and fill it on line
+if (req.http.X-VC-Purge-Key == "hash-to-be-filled-in") {
+in lib/purge.vcl. Then use the same hash in Varnish Caching WP admin.
 
 
 Static File Caching
