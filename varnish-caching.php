@@ -2,7 +2,7 @@
 /*
 Plugin Name: Varnish Caching
 Plugin URI: http://wordpress.org/extend/plugins/varnish-caching/
-Description: Sends purge requests to URLs of changed posts/pages when they are modified.
+Description: WordPress Varnish Cache integration.
 Version: 1.0
 Author: Razvan Stanga
 Author URI: http://git.razvi.ro/
@@ -24,10 +24,10 @@ class VarnishCaching {
     protected $ipsToHosts = array();
     protected $purgeKey = null;
     protected $getParam = 'purge_varnish_cache';
-    protected $noticeMessage = '';
     protected $postTypes = array('page', 'post');
     protected $override = 0;
     protected $customFields = array();
+    protected $noticeMessage = '';
     protected $debug = 0;
 
     public function __construct()
@@ -59,10 +59,13 @@ class VarnishCaching {
     {
         load_plugin_textdomain($this->plugin);
 
+        add_action('wp', array($this, 'buffer_start'));
+        add_action('shutdown', array($this, 'buffer_end'));
+
         $this->debug = get_option($this->prefix . 'debug');
 
         // send headers to varnish
-        add_action('send_headers', array($this, 'add_headers'));
+        add_action('send_headers', array($this, 'send_headers'));
 
         // register events to purge post
         foreach ($this->getRegisterEvents() as $event) {
@@ -88,6 +91,27 @@ class VarnishCaching {
             add_action('admin_menu', array($this, 'createCustomFields'));
             add_action('save_post', array($this, 'saveCustomFields' ), 1, 2);
         }
+        add_filter('the_post', array($this, 'override_ttl'));
+    }
+
+    public function override_ttl($post)
+    {
+        if (is_page() || is_singular() ) {
+            $ttl = get_post_meta($post->ID, $this->prefix . 'ttl', true);
+            Header('Cache-Control: max-age=' . $ttl, true);
+        }
+    }
+
+    public function callback($buffer) {
+        return $buffer;
+    }
+
+    public function buffer_start() {
+        ob_start(array($this, "callback"));
+    }
+
+    public function buffer_end() {
+        ob_end_flush();
     }
 
     protected function setupIpsToHosts()
@@ -213,10 +237,10 @@ class VarnishCaching {
     {
         $admin_bar->add_menu( array(
             'id'    => 'purge-all-varnish-cache',
-            'title' => 'Purge Varnish Cache',
+            'title' => __('Purge ALL Varnish Cache', $this->plugin),
             'href'  => wp_nonce_url(add_query_arg($this->getParam, 1), $this->plugin),
             'meta'  => array(
-                'title' => __('Purge Varnish Cache',$this->plugin),
+                'title' => __('Purge ALL Varnish Cache', $this->plugin),
             ),
         ));
     }
@@ -232,7 +256,7 @@ class VarnishCaching {
             $intro .= sprintf(__('<a href="%1$s">Varnish Caching</a> automatically purges your posts when published or updated. Sometimes you need a manual flush.', $this->plugin), 'http://wordpress.org/plugins/varnish-caching/');
             $button .=  __('Press the button below to force it to purge your entire cache.', $this->plugin);
             $button .= '</p><p><span class="button"><a href="' . $url . '"><strong>';
-            $button .= __('Purge Varnish', $this->plugin);
+            $button .= __('Purge ALL Varnish Cache', $this->plugin);
             $button .= '</strong></a></span>';
             $nopermission .=  __('You do not have permission to purge the cache for the whole site. Please contact your adminstrator.', $this->plugin);
         }
@@ -395,7 +419,7 @@ class VarnishCaching {
         $this->purgeCache();
     }
 
-    public function add_headers()
+    public function send_headers()
     {
         $enable = get_option($this->prefix . 'enable');
         if ($enable) {
