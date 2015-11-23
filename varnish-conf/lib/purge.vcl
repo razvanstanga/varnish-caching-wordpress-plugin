@@ -89,5 +89,7 @@ sub vcl_deliver {
         unset resp.http.X-VC-Enabled;
         unset resp.http.X-VC-Cacheable;
         unset resp.http.X-VC-Purge-Key-Auth;
+        unset resp.http.X-VC-TTL;
+        unset resp.http.X-VC-GotSession;
     }
 }

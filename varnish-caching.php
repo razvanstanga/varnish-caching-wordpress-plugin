@@ -91,14 +91,24 @@ class VarnishCaching {
             add_action('admin_menu', array($this, 'createCustomFields'));
             add_action('save_post', array($this, 'saveCustomFields' ), 1, 2);
         }
-        add_filter('the_post', array($this, 'override_ttl'));
+        add_action('wp_enqueue_scripts', array($this, 'override_ttl'));
+        add_action('wp_enqueue_scripts', array($this, 'override_homepage_ttl'));
     }
 
     public function override_ttl($post)
     {
-        if (is_page() || is_singular() ) {
-            $ttl = get_post_meta($post->ID, $this->prefix . 'ttl', true);
+        $postId = isset($GLOBALS['wp_the_query']->post->ID) ? $GLOBALS['wp_the_query']->post->ID : 0;
+        if ($postId && (is_page() || is_single())) {
+            $ttl = get_post_meta($postId, $this->prefix . 'ttl', true);
             Header('Cache-Control: max-age=' . $ttl, true);
+        }
+    }
+
+    public function override_homepage_ttl()
+    {
+        if (is_home() || is_front_page()) {
+            $this->homepage_ttl = get_option($this->prefix . 'homepage_ttl');
+            Header('Cache-Control: max-age=' . $this->homepage_ttl, true);
         }
     }
 
@@ -464,6 +474,7 @@ class VarnishCaching {
         add_settings_section('section', 'Settings', null, $this->plugin . '-options');
 
         add_settings_field($this->prefix . "enable", __("Enable" , $this->plugin), array($this, $this->prefix . "enable"), $this->plugin . '-options', "section");
+        add_settings_field($this->prefix . "homepage_ttl", __("Homepage cache TTL", $this->plugin), array($this, $this->prefix . "homepage_ttl"), $this->plugin . '-options', "section");
         add_settings_field($this->prefix . "ttl", __("Cache TTL", $this->plugin), array($this, $this->prefix . "ttl"), $this->plugin . '-options', "section");
         add_settings_field($this->prefix . "ips", __("IPs", $this->plugin), array($this, $this->prefix . "ips"), $this->plugin . '-options', "section");
         add_settings_field($this->prefix . "dynamic_host", __("Dynamic host", $this->plugin), array($this, $this->prefix . "dynamic_host"), $this->plugin . '-options', "section");
@@ -476,6 +487,7 @@ class VarnishCaching {
 
         register_setting("section", $this->prefix . "enable");
         register_setting("section", $this->prefix . "ttl");
+        register_setting("section", $this->prefix . "homepage_ttl");
         register_setting("section", $this->prefix . "ips");
         register_setting("section", $this->prefix . "dynamic_host");
         register_setting("section", $this->prefix . "hosts");
@@ -489,6 +501,14 @@ class VarnishCaching {
         ?>
             <input type="checkbox" name="varnish_caching_enable" value="1" <?php checked(1, get_option($this->prefix . 'enable'), true); ?> />
             <p class="description"><?=__('Enable Varnish caching', $this->plugin)?></p>
+        <?php
+    }
+
+    public function varnish_caching_homepage_ttl()
+    {
+        ?>
+            <input type="text" name="varnish_caching_homepage_ttl" id="varnish_caching_homepage_ttl" value="<?php echo get_option($this->prefix . 'homepage_ttl'); ?>" />
+            <p class="description"><?=__('Time to live in seconds in Varnish cache for homepage', $this->plugin)?></p>
         <?php
     }
 
@@ -550,6 +570,9 @@ class VarnishCaching {
     {
         ?>
             <input type="checkbox" name="varnish_caching_debug" value="1" <?php checked(1, get_option($this->prefix . 'debug'), true); ?> />
+            <p class="description">
+                <?=__('Send all debugging headers to the client. Also shows complete response from Varnish on purge all.', $this->plugin)?>
+            </p>
         <?php
     }
 }

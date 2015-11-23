@@ -51,6 +51,7 @@ sub vcl_recv {
     }
     # don't cache logged-in users or authors
     if (req.http.Cookie ~ "wp-postpass_|wordpress_logged_in_|comment_author|PHPSESSID") {
+        set req.http.X-VC-GotSession = "true";
         return(pass);
     }
     # don't cache ajax requests
@@ -96,19 +97,21 @@ sub vcl_fetch {
         set beresp.grace = 2m;
     }
 
+    set beresp.http.X-VC-TTL = beresp.ttl;
+
     # catch obvious reasons we can't cache
     if (beresp.http.Set-Cookie) {
         set beresp.ttl = 0s;
     }
 
-    # Varnish determined the object was not cacheable
-    if (beresp.ttl <= 0s) {
-        set beresp.http.X-VC-Cacheable = "NO:Not Cacheable";
+    # You don't wish to cache content for logged in users
+    if (req.http.Cookie ~ "wp-postpass_|wordpress_logged_in_|comment_author|PHPSESSID") {
+        set beresp.http.X-VC-Cacheable = "NO:Got Session";
         return(hit_for_pass);
 
-    # You don't wish to cache content for logged in users
-    } else if (req.http.Cookie ~ "wp-postpass_|wordpress_logged_in_|comment_author|PHPSESSID") {
-        set beresp.http.X-VC-Cacheable = "NO:Got Session";
+    # Varnish determined the object was not cacheable
+    } else if (beresp.ttl <= 0s) {
+        set beresp.http.X-VC-Cacheable = "NO:Not Cacheable";
         return(hit_for_pass);
 
     # You are respecting the Cache-Control=private header from the backend
