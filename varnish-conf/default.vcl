@@ -101,7 +101,9 @@ sub vcl_fetch {
     }
 
     # overwrite ttl with X-VC-TTL
-    set beresp.ttl = std.duration(beresp.http.X-VC-TTL + "s", 0s);
+    if (beresp.http.X-VC-TTL) {
+        set beresp.ttl = std.duration(beresp.http.X-VC-TTL + "s", 0s);
+    }
 
     # catch obvious reasons we can't cache
     if (beresp.http.Set-Cookie) {

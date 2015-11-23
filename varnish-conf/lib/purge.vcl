@@ -86,8 +86,9 @@ sub vcl_deliver {
     if (resp.http.X-VC-Debug ~ "true") {
         set resp.http.X-VC-Hash = req.url+"#"+req.http.host;
     } else {
-        unset resp.http.X-VC-Debug;
         unset resp.http.X-VC-Enabled;
+        unset resp.http.X-VC-Cache;
+        unset resp.http.X-VC-Debug;
         unset resp.http.X-VC-Cacheable;
         unset resp.http.X-VC-Purge-Key-Auth;
         unset resp.http.X-VC-TTL;
