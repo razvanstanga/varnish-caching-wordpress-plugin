@@ -7,16 +7,16 @@
 # 3.0.3.  In 3.0.3+, hit_for_pass in vcl_fetch is all that is necessary.
 
 sub vcl_recv {
-	if (req.http.X-Pipe-Big-File && req.restarts > 0) {
-		unset req.http.X-Pipe-Big-File;
-		return (pipe);
-	}
+    if (req.http.X-Pipe-Big-File && req.restarts > 0) {
+        unset req.http.X-Pipe-Big-File;
+        return (pipe);
+    }
 }
 
 sub vcl_fetch {
-	# Bypass cache for files > 10 MB
-	if (std.integer(beresp.http.Content-Length, 0) > 10485760) {
-		set req.http.X-Pipe-Big-File = "Yes";
-		return (restart);
-	}
+    # Bypass cache for files > 10 MB
+    if (std.integer(beresp.http.Content-Length, 0) > 10485760) {
+        set req.http.X-Pipe-Big-File = "Yes";
+        return (restart);
+    }
 }
