@@ -9,10 +9,10 @@ if (!defined('WP_CLI')) return;
 /**
  * Purges Varnish Cache
  */
-class WP_CLI_VarnishCaching_Purge_Command extends WP_CLI_Command {
+class WP_CLI_VCaching_Purge_Command extends WP_CLI_Command {
 
     public function __construct() {
-        $this->varnish_caching = new VarnishCaching();
+        $this->vcaching = new VCaching();
     }
 
     /**
@@ -20,15 +20,15 @@ class WP_CLI_VarnishCaching_Purge_Command extends WP_CLI_Command {
      *
      * ## EXAMPLES
      *
-     *     wp varnish purge
+     *     wp vcaching purge
      *
      */
     public function purge() {
-        wp_create_nonce('varnish-http-purge-cli');
-        $this->varnish_caching->purgeUrl(home_url() .'/?vc-regex');
-        WP_CLI::success('The Varnish cache was purged.');
+        wp_create_nonce('vcaching-purge-cli');
+        $this->vcaching->purgeUrl(home_url() .'/?vc-regex');
+        WP_CLI::success('ALL Varnish cache was purged.');
     }
 
 }
 
-WP_CLI::add_command('varnish', 'WP_CLI_VarnishCaching_Purge_Command');
+WP_CLI::add_command('vcaching', 'WP_CLI_VCaching_Purge_Command');

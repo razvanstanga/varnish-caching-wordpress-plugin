@@ -1,19 +1,19 @@
 <?php
 /*
-Plugin Name: Varnish Caching
-Plugin URI: http://wordpress.org/extend/plugins/varnish-caching/
+Plugin Name: VCaching
+Plugin URI: http://wordpress.org/extend/plugins/vcaching/
 Description: WordPress Varnish Cache integration.
-Version: 1.0
+Version: 1.1
 Author: Razvan Stanga
 Author URI: http://git.razvi.ro/
 License: http://www.apache.org/licenses/LICENSE-2.0
-Text Domain: varnish-caching
+Text Domain: vcaching
 Network: true
 
 Copyright 2015: Razvan Stanga (email: varnish-caching@razvi.ro)
 */
 
-class VarnishCaching {
+class VCaching {
     protected $blogId;
     protected $plugin = 'varnish-caching';
     protected $prefix = 'varnish_caching_';
@@ -582,4 +582,4 @@ class VarnishCaching {
     }
 }
 
-$purger = new VarnishCaching();
+$vcaching = new VCaching();

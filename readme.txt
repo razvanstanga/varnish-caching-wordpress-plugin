@@ -1,4 +1,4 @@
-=== Varnish Caching ===
+=== VCaching ===
 Donate: PAYPAL razvan_stanga@yahoo.com
 Contributors: razvanstanga
 Tags: varnish, purge, cache
