@@ -77,3 +77,4 @@ Click the 'Purge ALL Varnish Cache' button on the "Right Now" Dashboard
 
 1. admin panel
 2. example integration
+3. override default TTL in posts/pages
