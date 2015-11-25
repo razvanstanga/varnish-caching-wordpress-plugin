@@ -7,21 +7,23 @@ Tested up to: 4.3
 Stable tag: 3.7.3
 License: GPLv2 or later
 
-Varnish Cache Wordpress implementation
+Varnish Cache Wordpress integration
 
 == Description ==
-Varnish Cache Wordpress implementation
+Varnish Cache Wordpress integration
 
 You can control from the Varnish Cache admin panel the following :
-- Enable/Disable caching
-- Homepage cache TTL
-- Cache TTL (for every other page)
-- IPs/Hosts to clear cache to support every type of Varnish Cache implementation
-- Override default TTL in posts/pages
-- Purge key based PURGE
-- Debugging option
+
+* Enable/Disable caching
+* Homepage cache TTL
+* Cache TTL (for every other page)
+* IPs/Hosts to clear cache to support every type of Varnish Cache implementation
+* Override default TTL in posts/pages
+* Purge key based PURGE
+* Debugging option
 
 Purges Varnish Cache when your site is modified.
+
 Varnish Caching sends a PURGE request to Varnish Cache when a page or post is modified. This occurs when editing, publishing, commenting or deleting an item, and when changing themes.
 
 <a href="https://www.varnish-cache.org/">Varnish</a> is a web application accelerator also known as a caching HTTP reverse proxy. You install it in front of any server that speaks HTTP and configure it to cache the contents. This plugin <em>does not</em> install Varnish for you, nor does it configure Varnish for WordPress. It's expected you already did that on your own using the provided config files.
@@ -33,13 +35,16 @@ Not all pages are purged every time, depending on your Varnish configuration. Wh
 * Any categories or tags associated with the page
 
 Inspired from the following :
-- https://wordpress.org/plugins/varnish-http-purge/
-- https://github.com/dreamhost/varnish-vcl-collection/
+
+* https://wordpress.org/plugins/varnish-http-purge/
+* https://github.com/dreamhost/varnish-vcl-collection/
 
 Implemented on :
-- www.bvoltaire.fr
+
+* www.bvoltaire.fr
 
 == Installation ==
+
 Use the provided config files for Varnish Cache. Just edit the backend IP and port.
 
 == Frequently Asked Questions ==
