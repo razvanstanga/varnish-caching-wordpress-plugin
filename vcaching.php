@@ -495,7 +495,7 @@ class VCaching {
                 <?php
                     settings_fields($this->prefix . 'console');
                     do_settings_sections($this->prefix . 'console');
-                    submit_button(__('Purge cache', $this->plugin));
+                    submit_button(__('Purge', $this->plugin));
                 ?>
             </form>
         <?php endif; ?>
@@ -505,7 +505,7 @@ class VCaching {
 
     public function options_page_fields()
     {
-        add_settings_section($this->prefix . 'options', 'Settings', null, $this->prefix . 'options');
+        add_settings_section($this->prefix . 'options', __('Settings', $this->plugin), null, $this->prefix . 'options');
 
         add_settings_field($this->prefix . "enable", __("Enable" , $this->plugin), array($this, $this->prefix . "enable"), $this->prefix . 'options', $this->prefix . 'options');
         add_settings_field($this->prefix . "homepage_ttl", __("Homepage cache TTL", $this->plugin), array($this, $this->prefix . "homepage_ttl"), $this->prefix . 'options', $this->prefix . 'options');
@@ -536,7 +536,7 @@ class VCaching {
     {
         ?>
             <input type="checkbox" name="varnish_caching_enable" value="1" <?php checked(1, get_option($this->prefix . 'enable'), true); ?> />
-            <p class="description"><?=__('Enable Varnish caching', $this->plugin)?></p>
+            <p class="description"><?=__('Enable Varnish Caching', $this->plugin)?></p>
         <?php
     }
 
@@ -616,14 +616,14 @@ class VCaching {
     {
         add_settings_section('console', 'Console', null, $this->prefix . 'console');
 
-        add_settings_field($this->prefix . "purge_url", __("Purge URL", $this->plugin), array($this, $this->prefix . "purge_url"), $this->prefix . 'console', "console");
+        add_settings_field($this->prefix . "purge_url", __("URL", $this->plugin), array($this, $this->prefix . "purge_url"), $this->prefix . 'console', "console");
     }
 
     public function varnish_caching_purge_url()
     {
         ?>
             <input type="text" name="varnish_caching_purge_url" size="100" id="varnish_caching_purge_url" value="" />
-            <p class="description"><?=__('URL to purge. Example : /wp-content/uploads/.*', $this->plugin)?></p>
+            <p class="description"><?=__('Relative URL to purge. Example : /wp-content/uploads/.*', $this->plugin)?></p>
         <?php
     }
 }
