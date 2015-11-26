@@ -15,7 +15,7 @@ Copyright 2015: Razvan Stanga (email: varnish-caching@razvi.ro)
 
 class VCaching {
     protected $blogId;
-    protected $plugin = 'varnish-caching';
+    protected $plugin = 'vcaching';
     protected $prefix = 'varnish_caching_';
     protected $purgeUrls = array();
     protected $varnishIp = null;
@@ -90,9 +90,15 @@ class VCaching {
         if ($this->override = get_option($this->prefix . 'override')) {
             add_action('admin_menu', array($this, 'createCustomFields'));
             add_action('save_post', array($this, 'saveCustomFields' ), 1, 2);
+            add_action('wp_enqueue_scripts', array($this, 'override_ttl'), 1000);
         }
-        add_action('wp_enqueue_scripts', array($this, 'override_ttl'), 1000);
         add_action('wp_enqueue_scripts', array($this, 'override_homepage_ttl'), 1000);
+
+        // console purge
+        if (isset($_POST['varnish_caching_purge_url'])) {
+            $this->purgeUrl(home_url() . $_POST['varnish_caching_purge_url']);
+            add_action('admin_notices' , array($this, 'purge_message'));
+        }
     }
 
     public function override_ttl($post)
@@ -100,7 +106,9 @@ class VCaching {
         $postId = isset($GLOBALS['wp_the_query']->post->ID) ? $GLOBALS['wp_the_query']->post->ID : 0;
         if ($postId && (is_page() || is_single())) {
             $ttl = get_post_meta($postId, $this->prefix . 'ttl', true);
-            Header('X-VC-TTL: ' . $ttl, true);
+            if (trim($ttl) != '') {
+                Header('X-VC-TTL: ' . intval($ttl), true);
+            }
         }
     }
 
@@ -108,7 +116,7 @@ class VCaching {
     {
         if (is_home() || is_front_page()) {
             $this->homepage_ttl = get_option($this->prefix . 'homepage_ttl');
-            Header('X-VC-TTL: ' . $this->homepage_ttl, true);
+            Header('X-VC-TTL: ' . intval($this->homepage_ttl), true);
         }
     }
 
@@ -161,8 +169,7 @@ class VCaching {
             return;
         foreach ($this->customFields as $customField) {
             if (current_user_can($customField['capability'], $post_id)) {
-                if (isset($_POST[$this->prefix . $customField['name']]) && trim($_POST[$this->prefix . $customField['name']])) {
-                    $value = $_POST[$this->prefix . $customField['name']];
+                if (isset($_POST[$this->prefix . $customField['name']]) && trim($_POST[$this->prefix . $customField['name']]) != '') {
                     update_post_meta($post_id, $this->prefix . $customField['name'], $_POST[$this->prefix . $customField['name']]);
                 } else {
                     delete_post_meta($post_id, $this->prefix . $customField['name']);
@@ -211,9 +218,8 @@ class VCaching {
                             default: {
                                 // Plain text field
                                 echo '<p><b>' . $customField['title'] . '</b></p>';
-                                $value = intval(get_post_meta($post->ID, $this->prefix . $customField[ 'name' ], true));
+                                $value = get_post_meta($post->ID, $this->prefix . $customField[ 'name' ], true);
                                 $default_ttl = get_option($this->prefix . 'ttl');
-                                $value = $value ? $value : $default;
                                 echo '<p><input type="text" name="' . $this->prefix . $customField['name'] . '" id="' . $this->prefix . $customField['name'] . '" value="' . $value . '" /></p>';
                                 break;
                             }
@@ -450,11 +456,15 @@ class VCaching {
     public function admin_menu()
     {
         add_action('admin_menu', array($this, 'add_menu_item'));
-        add_action('admin_init', array($this, 'setting_page_fields'));
+        add_action('admin_init', array($this, 'options_page_fields'));
+        add_action('admin_init', array($this, 'console_page_fields'));
     }
 
     public function add_menu_item()
     {
+        if ($this->check_if_purgeable()) {
+            add_menu_page(__('Varnish Caching', $this->plugin), __('Varnish Caching', $this->plugin), 'manage_options', $this->plugin . '-console', array($this, 'settings_page'), home_url() . '/wp-content/plugins/' . $this->plugin . '/icon.png', 99);
+        }
         add_menu_page(__('Varnish Caching', $this->plugin), __('Varnish Caching', $this->plugin), 'manage_options', $this->plugin . '-options', array($this, 'settings_page'), home_url() . '/wp-content/plugins/' . $this->plugin . '/icon.png', 99);
     }
 
@@ -462,43 +472,63 @@ class VCaching {
     {
     ?>
         <div class="wrap">
-        <h1><?=__('Varnish Caching Options', $this->plugin)?></h1>
-        <form method="post" action="options.php">
-            <?php
-                settings_fields('section');
-                do_settings_sections($this->plugin . '-options');
-                submit_button();
-            ?>
-        </form>
+        <h1><?=__('Varnish Caching', $this->plugin)?></h1>
+
+        <h2 class="nav-tab-wrapper">
+            <a class="nav-tab <?php if($_GET['page'] == $this->plugin . '-options'): ?>nav-tab-active<?php endif; ?>" href="<?php echo admin_url() ?>index.php?page=<?=$this->plugin?>-options"><?=__('Options', $this->plugin)?></a>
+            <?php if ($this->check_if_purgeable()): ?>
+                <a class="nav-tab <?php if($_GET['page'] == $this->plugin . '-console'): ?>nav-tab-active<?php endif; ?>" href="<?php echo admin_url() ?>index.php?page=<?=$this->plugin?>-console"><?=__('Console', $this->plugin)?></a>
+            <?php endif; ?>
+        </h2>
+
+        <?php if($_GET['page'] == $this->plugin . '-options'): ?>
+            <form method="post" action="options.php">
+                <?php
+                    settings_fields($this->prefix . 'options');
+                    do_settings_sections($this->prefix . 'options');
+                    submit_button();
+                ?>
+            </form>
+        <?php elseif($_GET['page'] == $this->plugin . '-console'): ?>
+            <form method="post" action="index.php?page=<?=$this->plugin?>-console">
+                <?php
+                    settings_fields($this->prefix . 'console');
+                    do_settings_sections($this->prefix . 'console');
+                    submit_button('Purge cache');
+                ?>
+            </form>
+        <?php endif; ?>
         </div>
     <?php
     }
 
-    public function setting_page_fields()
+    public function options_page_fields()
     {
-        add_settings_section('section', 'Settings', null, $this->plugin . '-options');
+        add_settings_section($this->prefix . 'options', 'Settings', null, $this->prefix . 'options');
 
-        add_settings_field($this->prefix . "enable", __("Enable" , $this->plugin), array($this, $this->prefix . "enable"), $this->plugin . '-options', "section");
-        add_settings_field($this->prefix . "homepage_ttl", __("Homepage cache TTL", $this->plugin), array($this, $this->prefix . "homepage_ttl"), $this->plugin . '-options', "section");
-        add_settings_field($this->prefix . "ttl", __("Cache TTL", $this->plugin), array($this, $this->prefix . "ttl"), $this->plugin . '-options', "section");
-        add_settings_field($this->prefix . "ips", __("IPs", $this->plugin), array($this, $this->prefix . "ips"), $this->plugin . '-options', "section");
-        add_settings_field($this->prefix . "dynamic_host", __("Dynamic host", $this->plugin), array($this, $this->prefix . "dynamic_host"), $this->plugin . '-options', "section");
+        add_settings_field($this->prefix . "enable", __("Enable" , $this->plugin), array($this, $this->prefix . "enable"), $this->prefix . 'options', $this->prefix . 'options');
+        add_settings_field($this->prefix . "homepage_ttl", __("Homepage cache TTL", $this->plugin), array($this, $this->prefix . "homepage_ttl"), $this->prefix . 'options', $this->prefix . 'options');
+        add_settings_field($this->prefix . "ttl", __("Cache TTL", $this->plugin), array($this, $this->prefix . "ttl"), $this->prefix . 'options', $this->prefix . 'options');
+        add_settings_field($this->prefix . "ips", __("IPs", $this->plugin), array($this, $this->prefix . "ips"), $this->prefix . 'options', $this->prefix . 'options');
+        add_settings_field($this->prefix . "dynamic_host", __("Dynamic host", $this->plugin), array($this, $this->prefix . "dynamic_host"), $this->prefix . 'options', $this->prefix . 'options');
         if (!get_option($this->prefix . 'dynamic_host')) {
-            add_settings_field($this->prefix . "hosts", __("Hosts", $this->plugin), array($this, $this->prefix . "hosts"), $this->plugin . '-options', "section");
+            add_settings_field($this->prefix . "hosts", __("Hosts", $this->plugin), array($this, $this->prefix . "hosts"), $this->prefix . 'options', $this->prefix . 'options');
         }
-        add_settings_field($this->prefix . "override", __("Override default TTL", $this->plugin), array($this, $this->prefix . "override"), $this->plugin . '-options', "section");
-        add_settings_field($this->prefix . "purge_key", __("Purge key", $this->plugin), array($this, $this->prefix . "purge_key"), $this->plugin . '-options', "section");
-        add_settings_field($this->prefix . "debug", __("Enable debug", $this->plugin), array($this, $this->prefix . "debug"), $this->plugin . '-options', "section");
+        add_settings_field($this->prefix . "override", __("Override default TTL", $this->plugin), array($this, $this->prefix . "override"), $this->prefix . 'options', $this->prefix . 'options');
+        add_settings_field($this->prefix . "purge_key", __("Purge key", $this->plugin), array($this, $this->prefix . "purge_key"), $this->prefix . 'options', $this->prefix . 'options');
+        add_settings_field($this->prefix . "debug", __("Enable debug", $this->plugin), array($this, $this->prefix . "debug"), $this->prefix . 'options', $this->prefix . 'options');
 
-        register_setting("section", $this->prefix . "enable");
-        register_setting("section", $this->prefix . "ttl");
-        register_setting("section", $this->prefix . "homepage_ttl");
-        register_setting("section", $this->prefix . "ips");
-        register_setting("section", $this->prefix . "dynamic_host");
-        register_setting("section", $this->prefix . "hosts");
-        register_setting("section", $this->prefix . "override");
-        register_setting("section", $this->prefix . "purge_key");
-        register_setting("section", $this->prefix . "debug");
+        if($_POST['option_page'] == $this->prefix . 'options') {
+            register_setting($this->prefix . 'options', $this->prefix . "enable");
+            register_setting($this->prefix . 'options', $this->prefix . "ttl");
+            register_setting($this->prefix . 'options', $this->prefix . "homepage_ttl");
+            register_setting($this->prefix . 'options', $this->prefix . "ips");
+            register_setting($this->prefix . 'options', $this->prefix . "dynamic_host");
+            register_setting($this->prefix . 'options', $this->prefix . "hosts");
+            register_setting($this->prefix . 'options', $this->prefix . "override");
+            register_setting($this->prefix . 'options', $this->prefix . "purge_key");
+            register_setting($this->prefix . 'options', $this->prefix . "debug");
+        }
     }
 
     public function varnish_caching_enable()
@@ -578,6 +608,21 @@ class VCaching {
             <p class="description">
                 <?=__('Send all debugging headers to the client. Also shows complete response from Varnish on purge all.', $this->plugin)?>
             </p>
+        <?php
+    }
+
+    public function console_page_fields()
+    {
+        add_settings_section('console', 'Console', null, $this->prefix . 'console');
+
+        add_settings_field($this->prefix . "purge_url", __("Purge URL", $this->plugin), array($this, $this->prefix . "purge_url"), $this->prefix . 'console', "console");
+    }
+
+    public function varnish_caching_purge_url()
+    {
+        ?>
+            <input type="text" name="varnish_caching_purge_url" id="varnish_caching_purge_url" value="" />
+            <p class="description"><?=__('URL to purge', $this->plugin)?></p>
         <?php
     }
 }
