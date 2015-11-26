@@ -57,7 +57,7 @@ class VCaching {
 
     public function init()
     {
-        load_plugin_textdomain($this->plugin);
+        load_plugin_textdomain($this->plugin, false, plugin_basename( dirname( __FILE__ ) ) . '/languages' );
 
         add_action('wp', array($this, 'buffer_start'), 1000000);
         add_action('shutdown', array($this, 'buffer_end'), 1000000);
@@ -348,7 +348,7 @@ class VCaching {
                     }
                 }
             } else {
-                $this->noticeMessage .= '<br />Trying to purge URL : ' . $purgeme;
+                $this->noticeMessage .= '<br />' . __('Trying to purge URL :', $this->plugin) . $purgeme;
                 $message = preg_match("/<title>(.*)<\/title>/i", $response['body'], $matches);
                 $this->noticeMessage .= ' => <br /> ' . isset($matches[1]) ? " => " . $matches[1] : $response['body'];
                 $this->noticeMessage .= '<br />';
@@ -422,7 +422,7 @@ class VCaching {
             // Home Page and (if used) posts page
             array_push($listofurls, home_url('/'));
             if ( get_option('show_on_front') == 'page') {
-                array_push($listofurls, get_permalink( get_option('page_for_posts')));
+                array_push($listofurls, get_permalink(get_option('page_for_posts')));
             }
 
             // Now flush all the URLs we've collected
@@ -495,7 +495,7 @@ class VCaching {
                 <?php
                     settings_fields($this->prefix . 'console');
                     do_settings_sections($this->prefix . 'console');
-                    submit_button('Purge cache');
+                    submit_button(__('Purge cache', $this->plugin));
                 ?>
             </form>
         <?php endif; ?>
@@ -622,8 +622,8 @@ class VCaching {
     public function varnish_caching_purge_url()
     {
         ?>
-            <input type="text" name="varnish_caching_purge_url" id="varnish_caching_purge_url" value="" />
-            <p class="description"><?=__('URL to purge', $this->plugin)?></p>
+            <input type="text" name="varnish_caching_purge_url" size="100" id="varnish_caching_purge_url" value="" />
+            <p class="description"><?=__('URL to purge. Example : /wp-content/uploads/.*', $this->plugin)?></p>
         <?php
     }
 }
@@ -632,5 +632,5 @@ $vcaching = new VCaching();
 
 // WP-CLI
 if ( defined('WP_CLI') && WP_CLI ) {
-    include( 'wp-cli.php' );
+    include('wp-cli.php');
 }
