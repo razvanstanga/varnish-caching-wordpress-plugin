@@ -288,7 +288,7 @@ class VCaching {
     }
 
     protected function getRegisterEvents() {
-        return array(
+        $actions = array(
             'save_post',
             'deleted_post',
             'trashed_post',
@@ -296,6 +296,7 @@ class VCaching {
             'delete_attachment',
             'switch_theme',
         );
+        return apply_filters('vcaching_events', $actions);
     }
 
     public function purgeCache() {
@@ -330,7 +331,7 @@ class VCaching {
             $path = '';
         }
 
-        $schema = apply_filters('varnish_http_purge_schema', 'http://');
+        $schema = apply_filters('vcaching_schema', 'http://');
 
         foreach ($this->ipsToHosts as $key => $ipToHost) {
             $purgeme = $schema . $ipToHost['ip'] . $path . $pregex;
@@ -434,7 +435,7 @@ class VCaching {
         // Filter to add or remove urls to the array of purged urls
         // @param array $purgeUrls the urls (paths) to be purged
         // @param int $postId the id of the new/edited post
-        $this->purgeUrls = apply_filters('vc_purge_urls', $this->purgeUrls, $postId);
+        $this->purgeUrls = apply_filters('vcaching_purge_urls', $this->purgeUrls, $postId);
         $this->purgeCache();
     }
 
@@ -628,3 +629,8 @@ class VCaching {
 }
 
 $vcaching = new VCaching();
+
+// WP-CLI
+if ( defined('WP_CLI') && WP_CLI ) {
+    include( 'wp-cli.php' );
+}
