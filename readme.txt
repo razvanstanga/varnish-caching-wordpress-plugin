@@ -4,7 +4,7 @@ Contributors: razvanstanga
 Tags: varnish, purge, cache
 Requires at least: 4.0
 Tested up to: 4.3
-Stable tag: 3.7.3
+Stable tag: 1.2
 License: GPLv2 or later
 
 Varnish Cache Wordpress integration
@@ -21,8 +21,9 @@ You can control from the Varnish Cache admin panel the following :
 * Override default TTL in posts/pages
 * Purge key based PURGE
 * Debugging option
+* console precise manual purges
 
-Purges Varnish Cache when your site is modified.
+This plugin also purges Varnish Cache when your site is modified.
 
 Varnish Caching sends a PURGE request to Varnish Cache when a page or post is modified. This occurs when editing, publishing, commenting or deleting an item, and when changing themes.
 
@@ -45,13 +46,14 @@ Implemented on :
 
 == Installation ==
 
-Use the provided config files for Varnish Cache. Just edit the backend IP and port.
+Use the provided config files for Varnish Cache. Just edit the backend IP/port and ACLs.
+You can also use the purge key method. You must fill in lib/purge.vcl the purge key.
 
 == Frequently Asked Questions ==
 
 = What version of Varnish is supported? =
 
-This was built and tested on Varnish 3.x. It is only supported on v3 at this time.
+This was built and tested on Varnish 3.x. Soon Varnish 4.x.
 
 = Why doesn't every page flush when I make a new post? =
 
@@ -61,7 +63,14 @@ The only pages that should purge are the post's page, the front page, categories
 
 Click the 'Purge ALL Varnish Cache' button on the "Right Now" Dashboard
 
+= How do I manually purge cache? =
+
+Use the console. For example you can purge the whole uploads folder with the URL /wp-content/uploads/.*
+
 == Changelog ==
+
+= 1.2 =
+* console for precise manual purge
 
 = 1.1 =
 * Play nice with W3 Total Cache
@@ -78,3 +87,4 @@ Click the 'Purge ALL Varnish Cache' button on the "Right Now" Dashboard
 1. admin panel
 2. example integration
 3. override default TTL in posts/pages
+4. console purge
