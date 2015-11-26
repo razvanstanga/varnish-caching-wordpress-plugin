@@ -4,7 +4,7 @@ Contributors: razvanstanga
 Tags: varnish, purge, cache
 Requires at least: 4.0
 Tested up to: 4.3
-Stable tag: 1.2
+Stable tag: 1.2.1
 License: GPLv2 or later
 
 Varnish Cache Wordpress integration
@@ -68,6 +68,9 @@ Click the 'Purge ALL Varnish Cache' button on the "Right Now" Dashboard
 Use the console. For example you can purge the whole uploads folder with the URL /wp-content/uploads/.*
 
 == Changelog ==
+
+= 1.2.1 =
+* wp cli
 
 = 1.2 =
 * console for precise manual purge
