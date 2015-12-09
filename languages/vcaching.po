@@ -1,0 +1,159 @@
+# Translation of Development (trunk) in English (Canada)
+# This file is distributed under the same license as the Development (trunk) package.
+msgid ""
+msgstr ""
+"PO-Revision-Date: 2015-11-26 07:44:46+0000\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: GlotPress/1.0-alpha-1100\n"
+"Project-Id-Version: Development (trunk)\n"
+
+#: vcaching.php:481
+msgid "Console"
+msgstr "Console"
+
+#: vcaching.php:619
+msgid "Purge URL"
+msgstr ""
+
+#: vcaching.php:626
+msgid "URL to purge"
+msgstr ""
+
+#: vcaching.php:479
+msgid "Options"
+msgstr "Options"
+
+#: vcaching.php:511
+msgid "Homepage cache TTL"
+msgstr "Homepage cache TTL"
+
+#: vcaching.php:512
+msgid "Cache TTL"
+msgstr "Cache TTL"
+
+#: vcaching.php:513
+msgid "IPs"
+msgstr "IPs"
+
+#: vcaching.php:514
+msgid "Dynamic host"
+msgstr "Dynamic host"
+
+#: vcaching.php:516
+msgid "Hosts"
+msgstr "Hosts"
+
+#: vcaching.php:518
+msgid "Override default TTL"
+msgstr "Override default TTL"
+
+#: vcaching.php:519
+msgid "Purge key"
+msgstr "Purge key"
+
+#: vcaching.php:520
+msgid "Enable debug"
+msgstr "Enable debug"
+
+#: vcaching.php:539
+msgid "Enable Varnish caching"
+msgstr "Enable Varnish caching"
+
+#: vcaching.php:547
+msgid "Time to live in seconds in Varnish cache for homepage"
+msgstr "Time to live in seconds in Varnish cache for homepage"
+
+#: vcaching.php:555
+msgid "Time to live in seconds in Varnish cache"
+msgstr "Time to live in seconds in Varnish cache"
+
+#: vcaching.php:563
+msgid "Comma separated ip/ip:port. Example : 192.168.0.2,192.168.0.3:8080"
+msgstr "Comma separated ip/ip:port. Example : 192.168.0.2,192.168.0.3:8080"
+
+#: vcaching.php:572
+msgid "Uses the $_SERVER['HTTP_HOST'] as hash for Varnish. This means the purge cache action will work on the domain you're on.<br />Use this option if you use only one domain."
+msgstr "Uses the $_SERVER['HTTP_HOST'] as hash for Varnish. This means the purge cache action will work on the domain you're on.<br />Use this option if you use only one domain."
+
+#: vcaching.php:582
+msgid "Comma separated hostnames. Varnish uses the hostname to create the cache hash. For each IP, you must set a hostname.<br />Use this option if you use multiple domains."
+msgstr "Comma separated hostnames. Varnish uses the hostname to create the cache hash. For each IP, you must set a hostname.<br />Use this option if you use multiple domains."
+
+#: vcaching.php:591
+msgid "Override default TTL on each post/page."
+msgstr "Override default TTL on each post/page."
+
+#: vcaching.php:600
+msgid "Key used to purge Varnish cache. It is sent to Varnish as X-VC-Purge-Key header. Use a SHA-256 hash.<br />If you can't use ACL's, use this option."
+msgstr "Key used to purge Varnish cache. It is sent to Varnish as X-VC-Purge-Key header. Use a SHA-256 hash.<br />If you can't use ACL's, use this option."
+
+#: vcaching.php:610
+msgid "Send all debugging headers to the client. Also shows complete response from Varnish on purge all."
+msgstr "Send all debugging headers to the client. Also shows complete response from Varnish on purge all."
+
+#. Plugin Name of the plugin/theme
+msgid "VCaching"
+msgstr "VCaching"
+
+#. Plugin URI of the plugin/theme
+msgid "http://wordpress.org/extend/plugins/vcaching/"
+msgstr "http://wordpress.org/extend/plugins/vcaching/"
+
+#. Description of the plugin/theme
+msgid "WordPress Varnish Cache integration."
+msgstr "WordPress Varnish Cache integration."
+
+#. Author of the plugin/theme
+msgid "Razvan Stanga"
+msgstr "Razvan Stanga"
+
+#. Author URI of the plugin/theme
+msgid "http://git.razvi.ro/"
+msgstr "http://git.razvi.ro/"
+
+#: vcaching.php:46
+msgid "Not required. If filled in overrides default TTL of %s seconds. 0 means no caching."
+msgstr "Not required. If filled in overrides default TTL of %s seconds. 0 means no caching."
+
+#: vcaching.php:242
+msgid "Varnish message:"
+msgstr "Varnish message:"
+
+#: vcaching.php:247
+msgid "Please set the IPs for Varnish!"
+msgstr "Please set the IPs for Varnish!"
+
+#: vcaching.php:252
+msgid "Varnish Caching requires you to use custom permalinks. Please go to the <a href=\"options-permalink.php\">Permalinks Options Page</a> to configure them."
+msgstr "Varnish Caching requires you to use custom permalinks. Please go to the <a href=\"options-permalink.php\">Permalinks Options Page</a> to configure them."
+
+#: vcaching.php:259 vcaching.php:262 vcaching.php:278
+msgid "Purge ALL Varnish Cache"
+msgstr "Purge ALL Varnish Cache"
+
+#: vcaching.php:273
+msgid "Please setup Varnish IPs to be able to use <a href=\"%1$s\">Varnish Caching</a>."
+msgstr "Please setup Varnish IPs to be able to use <a href=\"%1$s\">Varnish Caching</a>."
+
+#: vcaching.php:275
+msgid "<a href=\"%1$s\">Varnish Caching</a> automatically purges your posts when published or updated. Sometimes you need a manual flush."
+msgstr "<a href=\"%1$s\">Varnish Caching</a> automatically purges your posts when published or updated. Sometimes you need a manual flush."
+
+#: vcaching.php:276
+msgid "Press the button below to force it to purge your entire cache."
+msgstr "Press the button below to force it to purge your entire cache."
+
+#: vcaching.php:280
+msgid "You do not have permission to purge the cache for the whole site. Please contact your adminstrator."
+msgstr "You do not have permission to purge the cache for the whole site. Please contact your adminstrator."
+
+#: vcaching.php:467 vcaching.php:469 vcaching.php:476
+msgid "Varnish Caching"
+msgstr "Varnish Caching"
+
+#: vcaching.php:510
+msgid "Enable"
+msgstr "Enable"

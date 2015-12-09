@@ -3,7 +3,7 @@
 Plugin Name: VCaching
 Plugin URI: http://wordpress.org/extend/plugins/vcaching/
 Description: WordPress Varnish Cache integration.
-Version: 1.2.2
+Version: 1.2.3
 Author: Razvan Stanga
 Author URI: http://git.razvi.ro/
 License: http://www.apache.org/licenses/LICENSE-2.0
@@ -429,9 +429,7 @@ class VCaching {
             foreach ($listofurls as $url) {
                 array_push($this->purgeUrls, $url) ;
             }
-
         }
-
         // Filter to add or remove urls to the array of purged urls
         // @param array $purgeUrls the urls (paths) to be purged
         // @param int $postId the id of the new/edited post
@@ -464,9 +462,8 @@ class VCaching {
     public function add_menu_item()
     {
         if ($this->check_if_purgeable()) {
-            add_menu_page(__('Varnish Caching', $this->plugin), __('Varnish Caching', $this->plugin), 'manage_options', $this->plugin . '-console', array($this, 'settings_page'), home_url() . '/wp-content/plugins/' . $this->plugin . '/icon.png', 99);
+            add_menu_page(__('Varnish Caching', $this->plugin), __('Varnish Caching', $this->plugin), 'manage_options', $this->plugin . '-plugin', array($this, 'settings_page'), home_url() . '/wp-content/plugins/' . $this->plugin . '/icon.png', 99);
         }
-        add_menu_page(__('Varnish Caching', $this->plugin), __('Varnish Caching', $this->plugin), 'manage_options', $this->plugin . '-options', array($this, 'settings_page'), home_url() . '/wp-content/plugins/' . $this->plugin . '/icon.png', 99);
     }
 
     public function settings_page()
@@ -476,13 +473,13 @@ class VCaching {
         <h1><?=__('Varnish Caching', $this->plugin)?></h1>
 
         <h2 class="nav-tab-wrapper">
-            <a class="nav-tab <?php if($_GET['page'] == $this->plugin . '-options'): ?>nav-tab-active<?php endif; ?>" href="<?php echo admin_url() ?>index.php?page=<?=$this->plugin?>-options"><?=__('Options', $this->plugin)?></a>
+            <a class="nav-tab <?php if(!isset($_GET['tab']) || $_GET['tab'] == 'options'): ?>nav-tab-active<?php endif; ?>" href="<?php echo admin_url() ?>index.php?page=<?=$this->plugin?>-plugin&amp;tab=options"><?=__('Options', $this->plugin)?></a>
             <?php if ($this->check_if_purgeable()): ?>
-                <a class="nav-tab <?php if($_GET['page'] == $this->plugin . '-console'): ?>nav-tab-active<?php endif; ?>" href="<?php echo admin_url() ?>index.php?page=<?=$this->plugin?>-console"><?=__('Console', $this->plugin)?></a>
+                <a class="nav-tab <?php if($_GET['tab'] == 'console'): ?>nav-tab-active<?php endif; ?>" href="<?php echo admin_url() ?>index.php?page=<?=$this->plugin?>-plugin&amp;tab=console"><?=__('Console', $this->plugin)?></a>
             <?php endif; ?>
         </h2>
 
-        <?php if($_GET['page'] == $this->plugin . '-options'): ?>
+        <?php if(!isset($_GET['tab']) || $_GET['tab'] == 'options'): ?>
             <form method="post" action="options.php">
                 <?php
                     settings_fields($this->prefix . 'options');
@@ -490,8 +487,8 @@ class VCaching {
                     submit_button();
                 ?>
             </form>
-        <?php elseif($_GET['page'] == $this->plugin . '-console'): ?>
-            <form method="post" action="index.php?page=<?=$this->plugin?>-console">
+        <?php elseif($_GET['tab'] == 'console'): ?>
+            <form method="post" action="index.php?page=<?=$this->plugin?>-plugin&amp;tab=console">
                 <?php
                     settings_fields($this->prefix . 'console');
                     do_settings_sections($this->prefix . 'console');

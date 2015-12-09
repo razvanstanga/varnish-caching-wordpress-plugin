@@ -1,0 +1,167 @@
+# Translation of Development (trunk) in Romanian
+# This file is distributed under the same license as the Development (trunk) package.
+msgid ""
+msgstr ""
+"PO-Revision-Date: 2015-11-26 07:44:46+0000\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n==1 ? 0 : (n==0 || (n%100 > 0 && n%100 < 20)) ? 1 : 2);\n"
+"X-Generator: GlotPress/1.0-alpha-1100\n"
+"Project-Id-Version: Development (trunk)\n"
+
+#: vcaching.php:498
+msgid "Purge cache"
+msgstr "Sterge cache"
+
+#: vcaching.php:626
+msgid "URL to purge. Example : /wp-content/uploads/.*"
+msgstr "Sterge URL. Exemplu : /wp-content/uploads/.*"
+
+#: vcaching.php:351
+msgid "Trying to purge URL :"
+msgstr "Incercare de stergere URL :"
+
+#: vcaching.php:481
+msgid "Console"
+msgstr "Consolă"
+
+#: vcaching.php:619
+msgid "Purge URL"
+msgstr "Sterge URL"
+
+#: vcaching.php:479
+msgid "Options"
+msgstr "Opţiuni"
+
+#: vcaching.php:511
+msgid "Homepage cache TTL"
+msgstr "Cache TTL homepage "
+
+#: vcaching.php:512
+msgid "Cache TTL"
+msgstr "Cache TTL"
+
+#: vcaching.php:513
+msgid "IPs"
+msgstr "IPs"
+
+#: vcaching.php:514
+msgid "Dynamic host"
+msgstr "Host dinamic"
+
+#: vcaching.php:516
+msgid "Hosts"
+msgstr "Domenii"
+
+#: vcaching.php:518
+msgid "Override default TTL"
+msgstr "Suprascrie TTL"
+
+#: vcaching.php:519
+msgid "Purge key"
+msgstr "Cheia pentru purge"
+
+#: vcaching.php:520
+msgid "Enable debug"
+msgstr "Activeaza debug"
+
+#: vcaching.php:539
+msgid "Enable Varnish caching"
+msgstr "Activeaza caching Varnish"
+
+#: vcaching.php:547
+msgid "Time to live in seconds in Varnish cache for homepage"
+msgstr "Secunde de caching in cache Varnish pentru homepage"
+
+#: vcaching.php:555
+msgid "Time to live in seconds in Varnish cache"
+msgstr "Secunde de caching in cache Varnish"
+
+#: vcaching.php:563
+msgid "Comma separated ip/ip:port. Example : 192.168.0.2,192.168.0.3:8080"
+msgstr "ip/ip:port separate de virgula. Exemple : 192.168.0.2,192.168.0.3:8080"
+
+#: vcaching.php:572
+msgid "Uses the $_SERVER['HTTP_HOST'] as hash for Varnish. This means the purge cache action will work on the domain you're on.<br />Use this option if you use only one domain."
+msgstr "Foloseste $_SERVER['HTTP_HOST'] ca hash pentru Varnish. Asta inseamna ca actiunea de purge va functiona doar pe domeniul care esti.<br />Foloseste aceasta optiune daca folosesti un singur domeniu."
+
+#: vcaching.php:582
+msgid "Comma separated hostnames. Varnish uses the hostname to create the cache hash. For each IP, you must set a hostname.<br />Use this option if you use multiple domains."
+msgstr "Domenii separate de virgula. Varnish foloseste domeniul pentru a creea hash-ul pentru cache. Pentru fiecare IP, trebuie sa setezi un domeniu.<br />Foloseste aceasta optiune daca folosesti mai multe domenii."
+
+#: vcaching.php:591
+msgid "Override default TTL on each post/page."
+msgstr "Suprascrie TTL pentru fiecare post/pagina."
+
+#: vcaching.php:600
+msgid "Key used to purge Varnish cache. It is sent to Varnish as X-VC-Purge-Key header. Use a SHA-256 hash.<br />If you can't use ACL's, use this option."
+msgstr "Cheie folosita la stergerea cacheului. Este trimisa catre Varnish ca headerul X-VC-Purge-Key. Foloseste un hash gen SHA-256.<br />Daca nu poti folosi ACL, foloseste aceasta optiune."
+
+#: vcaching.php:610
+msgid "Send all debugging headers to the client. Also shows complete response from Varnish on purge all."
+msgstr "Trimite toate headerele pentru debug catre client. De asemenea va arata raspunsul complet dat de Varnish la actiunea de sterge tot cacheul."
+
+#. Plugin Name of the plugin/theme
+msgid "VCaching"
+msgstr "VCaching"
+
+#. Plugin URI of the plugin/theme
+msgid "http://wordpress.org/extend/plugins/vcaching/"
+msgstr "http://wordpress.org/extend/plugins/vcaching/"
+
+#. Description of the plugin/theme
+msgid "WordPress Varnish Cache integration."
+msgstr "Integrare WordPress cu Varnish Cache."
+
+#. Author of the plugin/theme
+msgid "Razvan Stanga"
+msgstr "Razvan Stanga"
+
+#. Author URI of the plugin/theme
+msgid "http://git.razvi.ro/"
+msgstr "http://git.razvi.ro/"
+
+#: vcaching.php:46
+msgid "Not required. If filled in overrides default TTL of %s seconds. 0 means no caching."
+msgstr "Nu este obligatoriu. Daca este completat, va suprascrie TTL-ul de baza de %s secunde. 0 inseamna cache dezactivat."
+
+#: vcaching.php:242
+msgid "Varnish message:"
+msgstr "Mesaj de la Varnish:"
+
+#: vcaching.php:247
+msgid "Please set the IPs for Varnish!"
+msgstr "Te rog sa setezi IP-urile pentru Varnish."
+
+#: vcaching.php:252
+msgid "Varnish Caching requires you to use custom permalinks. Please go to the <a href=\"options-permalink.php\">Permalinks Options Page</a> to configure them."
+msgstr "Varnish Caching are nevoie sa folosesti custom permalinks. Te rugam mergi la <a href=\"options-permalink.php\">Permalinks Options Page</a> pentru a le configura."
+
+#: vcaching.php:259 vcaching.php:262 vcaching.php:278
+msgid "Purge ALL Varnish Cache"
+msgstr "Sterge TOT cacheul Varnish"
+
+#: vcaching.php:273
+msgid "Please setup Varnish IPs to be able to use <a href=\"%1$s\">Varnish Caching</a>."
+msgstr "Te rugam sa setezi IP-urile pentru a putea folosi <a href=\"%1$s\">Varnish Caching</a>."
+
+#: vcaching.php:275
+msgid "<a href=\"%1$s\">Varnish Caching</a> automatically purges your posts when published or updated. Sometimes you need a manual flush."
+msgstr "<a href=\"%1$s\">Varnish Caching</a> sterge automat cache-ul cand publici sau modifici un post. Uneori e nevoie si de o stergere manuala."
+
+#: vcaching.php:276
+msgid "Press the button below to force it to purge your entire cache."
+msgstr "Apasa butonul de mai jos pentru a forta stergerea totala a cache-ului."
+
+#: vcaching.php:280
+msgid "You do not have permission to purge the cache for the whole site. Please contact your adminstrator."
+msgstr "Nu ai permisiunea sa stergi tot cache-ul. Te rugam contacteaza un administrator."
+
+#: vcaching.php:467 vcaching.php:469 vcaching.php:476
+msgid "Varnish Caching"
+msgstr "Caching Varnish"
+
+#: vcaching.php:510
+msgid "Enable"
+msgstr "Activare"
