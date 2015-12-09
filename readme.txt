@@ -4,7 +4,7 @@ Contributors: razvanstanga
 Tags: varnish, purge, cache
 Requires at least: 4.0
 Tested up to: 4.4
-Stable tag: 1.2.3
+Stable tag: 1.3
 License: GPLv2 or later
 
 Varnish Cache Wordpress integration
@@ -61,7 +61,7 @@ The only pages that should purge are the post's page, the front page, categories
 
 = How do I manually purge the whole cache? =
 
-Click the 'Purge ALL Varnish Cache' button on the "Right Now" Dashboard
+Click the 'Purge ALL Varnish Cache' button on the "Right Now" Dashboard.
 
 = How do I manually purge cache? =
 
@@ -71,8 +71,14 @@ Use the console. For example you can purge the whole uploads folder with the URL
 
 Yes it does. This plugin uses its own custom headers to communicate with Varnish and does not interfere with the heders sent by W3 Total Cache or any other caching plugin.
 
+= Varnish Statistics =
+
+Stats are available only with Varnish PECL extension installed. See <a href="https://pecl.php.net/package/varnish" target="_blank">https://pecl.php.net/package/varnish</a>.
 
 == Changelog ==
+
+= 1.3 =
+* varnish statistics
 
 = 1.2.3 =
 * wordpress 4.4 compatibility
@@ -100,3 +106,4 @@ Yes it does. This plugin uses its own custom headers to communicate with Varnish
 2. example integration
 3. override default TTL in posts/pages
 4. console purge
+5. varnish statistics

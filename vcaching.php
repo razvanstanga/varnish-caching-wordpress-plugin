@@ -3,7 +3,7 @@
 Plugin Name: VCaching
 Plugin URI: http://wordpress.org/extend/plugins/vcaching/
 Description: WordPress Varnish Cache integration.
-Version: 1.2.3
+Version: 1.3
 Author: Razvan Stanga
 Author URI: http://git.razvi.ro/
 License: http://www.apache.org/licenses/LICENSE-2.0
@@ -29,6 +29,209 @@ class VCaching {
     protected $customFields = array();
     protected $noticeMessage = '';
     protected $debug = 0;
+    protected $varnistStats = array(
+        "client_conn" => "Client connections accepted",
+        "client_drop" => "Connection dropped, no sess/wrk",
+        "client_req" => "Client requests received",
+        "cache_hit" => "Cache hits",
+        "cache_hitpass" => "Cache hits for pass",
+        "cache_miss" => "Cache misses",
+        "backend_conn" => "Backend conn. success",
+        "backend_unhealthy" => "Backend conn. not attempted",
+        "backend_busy" => "Backend conn. too many",
+        "backend_fail" => "Backend conn. failures",
+        "backend_reuse" => "Backend conn. reuses",
+        "backend_toolate" => "Backend conn. was closed",
+        "backend_recycle" => "Backend conn. recycles",
+        "backend_retry" => "Backend conn. retry",
+        "fetch_head" => "Fetch head",
+        "fetch_length" => "Fetch with Length",
+        "fetch_chunked" => "Fetch chunked",
+        "fetch_eof" => "Fetch EOF",
+        "fetch_bad" => "Fetch had bad headers",
+        "fetch_close" => "Fetch wanted close",
+        "fetch_oldhttp" => "Fetch pre HTTP/1.1 closed",
+        "fetch_zero" => "Fetch zero len",
+        "fetch_failed" => "Fetch failed",
+        "fetch_1xx" => "Fetch no body (1xx)",
+        "fetch_204" => "Fetch no body (204)",
+        "fetch_304" => "Fetch no body (304)",
+        "n_sess_mem" => "N struct sess_mem",
+        "n_sess" => "N struct sess",
+        "n_object" => "N struct object",
+        "n_vampireobject" => "N unresurrected objects",
+        "n_objectcore" => "N struct objectcore",
+        "n_objecthead" => "N struct objecthead",
+        "n_waitinglist" => "N struct waitinglist",
+        "n_vbc" => "N struct vbc",
+        "n_wrk" => "N worker threads",
+        "n_wrk_create" => "N worker threads created",
+        "n_wrk_failed" => "N worker threads not created",
+        "n_wrk_max" => "N worker threads limited",
+        "n_wrk_lqueue" => "work request queue length",
+        "n_wrk_queued" => "N queued work requests",
+        "n_wrk_drop" => "N dropped work requests",
+        "n_backend" => "N backends",
+        "n_expired" => "N expired objects",
+        "n_lru_nuked" => "N LRU nuked objects",
+        "n_lru_moved" => "N LRU moved objects",
+        "losthdr" => "HTTP header overflows",
+        "n_objsendfile" => "Objects sent with sendfile",
+        "n_objwrite" => "Objects sent with write",
+        "n_objoverflow" => "Objects overflowing workspace",
+        "s_sess" => "Total Sessions",
+        "s_req" => "Total Requests",
+        "s_pipe" => "Total pipe",
+        "s_pass" => "Total pass",
+        "s_fetch" => "Total fetch",
+        "s_hdrbytes" => "Total header bytes",
+        "s_bodybytes" => "Total body bytes",
+        "sess_closed" => "Session Closed",
+        "sess_pipeline" => "Session Pipeline",
+        "sess_readahead" => "Session Read Ahead",
+        "sess_linger" => "Session Linger",
+        "sess_herd" => "Session herd",
+        "shm_records" => "SHM records",
+        "shm_writes" => "SHM writes",
+        "shm_flushes" => "SHM flushes due to overflow",
+        "shm_cont" => "SHM MTX contention",
+        "shm_cycles" => "SHM cycles through buffer",
+        "sms_nreq" => "SMS allocator requests",
+        "sms_nobj" => "SMS outstanding allocations",
+        "sms_nbytes" => "SMS outstanding bytes",
+        "sms_balloc" => "SMS bytes allocated",
+        "sms_bfree" => "SMS bytes freed",
+        "backend_req" => "Backend requests made",
+        "n_vcl" => "N vcl total",
+        "n_vcl_avail" => "N vcl available",
+        "n_vcl_discard" => "N vcl discarded",
+        "n_ban" => "N total active bans",
+        "n_ban_gone" => "N total gone bans",
+        "n_ban_add" => "N new bans added",
+        "n_ban_retire" => "N old bans deleted",
+        "n_ban_obj_test" => "N objects tested",
+        "n_ban_re_test" => "N regexps tested against",
+        "n_ban_dups" => "N duplicate bans removed",
+        "hcb_nolock" => "HCB Lookups without lock",
+        "hcb_lock" => "HCB Lookups with lock",
+        "hcb_insert" => "HCB Inserts",
+        "esi_errors" => "ESI parse errors (unlock)",
+        "esi_warnings" => "ESI parse warnings (unlock)",
+        "accept_fail" => "Accept failures",
+        "client_drop_late" => "Connection dropped late",
+        "uptime" => "Client uptime",
+        "dir_dns_lookups" => "DNS director lookups",
+        "dir_dns_failed" => "DNS director failed lookups",
+        "dir_dns_hit" => "DNS director cached lookups hit",
+        "dir_dns_cache_full" => "DNS director full dnscache",
+        "vmods" => "Loaded VMODs",
+        "n_gzip" => "Gzip operations",
+        "n_gunzip" => "Gunzip operations",
+        "sess_pipe_overflow" => "Dropped sessions due to session pipe overflow",
+        "LCK.sms.creat" => "Created locks",
+        "LCK.sms.destroy" => "Destroyed locks",
+        "LCK.sms.locks" => "Lock Operations",
+        "LCK.sms.colls" => "Collisions",
+        "LCK.smp.creat" => "Created locks",
+        "LCK.smp.destroy" => "Destroyed locks",
+        "LCK.smp.locks" => "Lock Operations",
+        "LCK.smp.colls" => "Collisions",
+        "LCK.sma.creat" => "Created locks",
+        "LCK.sma.destroy" => "Destroyed locks",
+        "LCK.sma.locks" => "Lock Operations",
+        "LCK.sma.colls" => "Collisions",
+        "LCK.smf.creat" => "Created locks",
+        "LCK.smf.destroy" => "Destroyed locks",
+        "LCK.smf.locks" => "Lock Operations",
+        "LCK.smf.colls" => "Collisions",
+        "LCK.hsl.creat" => "Created locks",
+        "LCK.hsl.destroy" => "Destroyed locks",
+        "LCK.hsl.locks" => "Lock Operations",
+        "LCK.hsl.colls" => "Collisions",
+        "LCK.hcb.creat" => "Created locks",
+        "LCK.hcb.destroy" => "Destroyed locks",
+        "LCK.hcb.locks" => "Lock Operations",
+        "LCK.hcb.colls" => "Collisions",
+        "LCK.hcl.creat" => "Created locks",
+        "LCK.hcl.destroy" => "Destroyed locks",
+        "LCK.hcl.locks" => "Lock Operations",
+        "LCK.hcl.colls" => "Collisions",
+        "LCK.vcl.creat" => "Created locks",
+        "LCK.vcl.destroy" => "Destroyed locks",
+        "LCK.vcl.locks" => "Lock Operations",
+        "LCK.vcl.colls" => "Collisions",
+        "LCK.stat.creat" => "Created locks",
+        "LCK.stat.destroy" => "Destroyed locks",
+        "LCK.stat.locks" => "Lock Operations",
+        "LCK.stat.colls" => "Collisions",
+        "LCK.sessmem.creat" => "Created locks",
+        "LCK.sessmem.destroy" => "Destroyed locks",
+        "LCK.sessmem.locks" => "Lock Operations",
+        "LCK.sessmem.colls" => "Collisions",
+        "LCK.wstat.creat" => "Created locks",
+        "LCK.wstat.destroy" => "Destroyed locks",
+        "LCK.wstat.locks" => "Lock Operations",
+        "LCK.wstat.colls" => "Collisions",
+        "LCK.herder.creat" => "Created locks",
+        "LCK.herder.destroy" => "Destroyed locks",
+        "LCK.herder.locks" => "Lock Operations",
+        "LCK.herder.colls" => "Collisions",
+        "LCK.wq.creat" => "Created locks",
+        "LCK.wq.destroy" => "Destroyed locks",
+        "LCK.wq.locks" => "Lock Operations",
+        "LCK.wq.colls" => "Collisions",
+        "LCK.objhdr.creat" => "Created locks",
+        "LCK.objhdr.destroy" => "Destroyed locks",
+        "LCK.objhdr.locks" => "Lock Operations",
+        "LCK.objhdr.colls" => "Collisions",
+        "LCK.exp.creat" => "Created locks",
+        "LCK.exp.destroy" => "Destroyed locks",
+        "LCK.exp.locks" => "Lock Operations",
+        "LCK.exp.colls" => "Collisions",
+        "LCK.lru.creat" => "Created locks",
+        "LCK.lru.destroy" => "Destroyed locks",
+        "LCK.lru.locks" => "Lock Operations",
+        "LCK.lru.colls" => "Collisions",
+        "LCK.cli.creat" => "Created locks",
+        "LCK.cli.destroy" => "Destroyed locks",
+        "LCK.cli.locks" => "Lock Operations",
+        "LCK.cli.colls" => "Collisions",
+        "LCK.ban.creat" => "Created locks",
+        "LCK.ban.destroy" => "Destroyed locks",
+        "LCK.ban.locks" => "Lock Operations",
+        "LCK.ban.colls" => "Collisions",
+        "LCK.vbp.creat" => "Created locks",
+        "LCK.vbp.destroy" => "Destroyed locks",
+        "LCK.vbp.locks" => "Lock Operations",
+        "LCK.vbp.colls" => "Collisions",
+        "LCK.vbe.creat" => "Created locks",
+        "LCK.vbe.destroy" => "Destroyed locks",
+        "LCK.vbe.locks" => "Lock Operations",
+        "LCK.vbe.colls" => "Collisions",
+        "LCK.backend.creat" => "Created locks",
+        "LCK.backend.destroy" => "Destroyed locks",
+        "LCK.backend.locks" => "Lock Operations",
+        "LCK.backend.colls" => "Collisions",
+        "SMF.s0.c_req" => "Allocator requests",
+        "SMF.s0.c_fail" => "Allocator failures",
+        "SMF.s0.c_bytes" => "Bytes allocated",
+        "SMF.s0.c_freed" => "Bytes freed",
+        "SMF.s0.g_alloc" => "Allocations outstanding",
+        "SMF.s0.g_bytes" => "Bytes outstanding",
+        "SMF.s0.g_space" => "Bytes available",
+        "SMF.s0.g_smf" => "N struct smf",
+        "SMF.s0.g_smf_frag" => "N small free smf",
+        "SMF.s0.g_smf_large" => "N large free smf",
+        "SMA.Transient.c_req" => "Allocator requests",
+        "SMA.Transient.c_fail" => "Allocator failures",
+        "SMA.Transient.c_bytes" => "Bytes allocated",
+        "SMA.Transient.c_freed" => "Bytes freed",
+        "SMA.Transient.g_alloc" => "Allocations outstanding",
+        "SMA.Transient.g_bytes" => "Bytes outstanding",
+        "SMA.Transient.g_space" => "Bytes available",
+        "VBE.default(192.168.0.2,,80).vcls" => "VCL references",
+        "VBE.default(192.168.0.2,,80).happy" => "Happy health probes",
+    );
 
     public function __construct()
     {
@@ -473,10 +676,11 @@ class VCaching {
         <h1><?=__('Varnish Caching', $this->plugin)?></h1>
 
         <h2 class="nav-tab-wrapper">
-            <a class="nav-tab <?php if(!isset($_GET['tab']) || $_GET['tab'] == 'options'): ?>nav-tab-active<?php endif; ?>" href="<?php echo admin_url() ?>index.php?page=<?=$this->plugin?>-plugin&amp;tab=options"><?=__('Options', $this->plugin)?></a>
+            <a class="nav-tab <?php if(!isset($_GET['tab']) || $_GET['tab'] == 'options'): ?>nav-tab-active<?php endif; ?>" href="<?php echo admin_url() ?>index.php?page=<?=$this->plugin?>-plugin&amp;tab=options"><?=__('Settings', $this->plugin)?></a>
             <?php if ($this->check_if_purgeable()): ?>
                 <a class="nav-tab <?php if($_GET['tab'] == 'console'): ?>nav-tab-active<?php endif; ?>" href="<?php echo admin_url() ?>index.php?page=<?=$this->plugin?>-plugin&amp;tab=console"><?=__('Console', $this->plugin)?></a>
             <?php endif; ?>
+            <a class="nav-tab <?php if($_GET['tab'] == 'stats'): ?>nav-tab-active<?php endif; ?>" href="<?php echo admin_url() ?>index.php?page=<?=$this->plugin?>-plugin&amp;tab=stats"><?=__('Statistics', $this->plugin)?></a>
         </h2>
 
         <?php if(!isset($_GET['tab']) || $_GET['tab'] == 'options'): ?>
@@ -495,6 +699,51 @@ class VCaching {
                     submit_button(__('Purge', $this->plugin));
                 ?>
             </form>
+        <?php elseif($_GET['tab'] == 'stats'): ?>
+            <?php
+                $error = null;
+                if (class_exists('VarnishStat')) {
+                    $vs = new VarnishStat;
+                    try {
+                        $stats = $vs->getSnapshot();
+                    } catch (VarnishException $e) {
+                        $error = $e->getMessage();
+                    }
+                } else {
+                    $error = __('Stats are available only with Varnish PECL extension installed. See <a href="https://pecl.php.net/package/varnish" target="_blank">https://pecl.php.net/package/varnish</a>.', $this->plugin);
+                }
+            ?>
+            <h2><?= __('Statistics', $this->plugin) ?></h2>
+            <?php if($error == null): ?>
+            <table class="fixed">
+                <?php if(count($stats)): ?>
+                <thead>
+                    <tr>
+                        <td><strong><?= __('Key', $this->plugin) ?></strong></td>
+                        <td><strong><?= __('Value', $this->plugin) ?></strong></td>
+                        <td><strong><?= __('Description', $this->plugin) ?></strong></td>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($stats as $key => $value): ?>
+                    <tr>
+                        <td><?=$key?></td>
+                        <td><?=$value?></td>
+                        <td><?=isset($this->varnistStats[$key]) ? __($this->varnistStats[$key], $this->plugin) : ''?></td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+                <?php else: ?>
+                    <tr>
+                        <td colspan="3">
+                            <?=$error?>
+                        </td>
+                    </tr>
+                <?php endif; ?>
+            </table>
+            <?php else: ?>
+                <?=$error?>
+            <?php endif; ?>
         <?php endif; ?>
         </div>
     <?php
@@ -611,7 +860,7 @@ class VCaching {
 
     public function console_page_fields()
     {
-        add_settings_section('console', 'Console', null, $this->prefix . 'console');
+        add_settings_section('console', __("Console", $this->plugin), null, $this->prefix . 'console');
 
         add_settings_field($this->prefix . "purge_url", __("URL", $this->plugin), array($this, $this->prefix . "purge_url"), $this->prefix . 'console', "console");
     }
