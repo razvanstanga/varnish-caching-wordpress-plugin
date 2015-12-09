@@ -3,8 +3,8 @@ Donate: PAYPAL razvan_stanga@yahoo.com
 Contributors: razvanstanga
 Tags: varnish, purge, cache
 Requires at least: 4.0
-Tested up to: 4.3
-Stable tag: 1.2.2
+Tested up to: 4.4
+Stable tag: 1.2.3
 License: GPLv2 or later
 
 Varnish Cache Wordpress integration
@@ -67,7 +67,16 @@ Click the 'Purge ALL Varnish Cache' button on the "Right Now" Dashboard
 
 Use the console. For example you can purge the whole uploads folder with the URL /wp-content/uploads/.*
 
+= Does this work with W3 Total Cache? =
+
+Yes it does. This plugin uses its own custom headers to communicate with Varnish and does not interfere with the heders sent by W3 Total Cache or any other caching plugin.
+
+
 == Changelog ==
+
+= 1.2.3 =
+* wordpress 4.4 compatibility
+* Romanian language file
 
 = 1.2.1 =
 * wp cli

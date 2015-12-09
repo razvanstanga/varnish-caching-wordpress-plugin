@@ -2,7 +2,7 @@
 # This file is distributed under the same license as the Development (trunk) package.
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2015-11-26 07:44:46+0000\n"
+"PO-Revision-Date: 2015-11-26 15:42:47+0000\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -10,95 +10,99 @@ msgstr ""
 "X-Generator: GlotPress/1.0-alpha-1100\n"
 "Project-Id-Version: Development (trunk)\n"
 
-#: vcaching.php:498
-msgid "Purge cache"
-msgstr "Sterge cache"
+#: vcaching.php:505
+msgid "Settings"
+msgstr "Setari"
 
-#: vcaching.php:626
-msgid "URL to purge. Example : /wp-content/uploads/.*"
-msgstr "Sterge URL. Exemplu : /wp-content/uploads/.*"
+#: vcaching.php:495
+msgid "Purge"
+msgstr "Sterge"
+
+#: vcaching.php:616
+msgid "URL"
+msgstr "URL-ul"
+
+#: vcaching.php:623
+msgid "Relative URL to purge. Example : /wp-content/uploads/.*"
+msgstr "URL relativ pentru stergere. Exemplu : /wp-content/uploads/.*"
 
 #: vcaching.php:351
 msgid "Trying to purge URL :"
 msgstr "Incercare de stergere URL :"
 
-#: vcaching.php:481
+#: vcaching.php:478
 msgid "Console"
 msgstr "Consolă"
 
-#: vcaching.php:619
-msgid "Purge URL"
-msgstr "Sterge URL"
-
-#: vcaching.php:479
+#: vcaching.php:476
 msgid "Options"
 msgstr "Opţiuni"
 
-#: vcaching.php:511
+#: vcaching.php:508
 msgid "Homepage cache TTL"
 msgstr "Cache TTL homepage "
 
-#: vcaching.php:512
+#: vcaching.php:509
 msgid "Cache TTL"
 msgstr "Cache TTL"
 
-#: vcaching.php:513
+#: vcaching.php:510
 msgid "IPs"
 msgstr "IPs"
 
-#: vcaching.php:514
+#: vcaching.php:511
 msgid "Dynamic host"
 msgstr "Host dinamic"
 
-#: vcaching.php:516
+#: vcaching.php:513
 msgid "Hosts"
 msgstr "Domenii"
 
-#: vcaching.php:518
+#: vcaching.php:515
 msgid "Override default TTL"
 msgstr "Suprascrie TTL"
 
-#: vcaching.php:519
+#: vcaching.php:516
 msgid "Purge key"
 msgstr "Cheia pentru purge"
 
-#: vcaching.php:520
+#: vcaching.php:517
 msgid "Enable debug"
 msgstr "Activeaza debug"
 
-#: vcaching.php:539
-msgid "Enable Varnish caching"
+#: vcaching.php:536
+msgid "Enable Varnish Caching"
 msgstr "Activeaza caching Varnish"
 
-#: vcaching.php:547
+#: vcaching.php:544
 msgid "Time to live in seconds in Varnish cache for homepage"
 msgstr "Secunde de caching in cache Varnish pentru homepage"
 
-#: vcaching.php:555
+#: vcaching.php:552
 msgid "Time to live in seconds in Varnish cache"
 msgstr "Secunde de caching in cache Varnish"
 
-#: vcaching.php:563
+#: vcaching.php:560
 msgid "Comma separated ip/ip:port. Example : 192.168.0.2,192.168.0.3:8080"
 msgstr "ip/ip:port separate de virgula. Exemple : 192.168.0.2,192.168.0.3:8080"
 
-#: vcaching.php:572
+#: vcaching.php:569
 msgid "Uses the $_SERVER['HTTP_HOST'] as hash for Varnish. This means the purge cache action will work on the domain you're on.<br />Use this option if you use only one domain."
 msgstr "Foloseste $_SERVER['HTTP_HOST'] ca hash pentru Varnish. Asta inseamna ca actiunea de purge va functiona doar pe domeniul care esti.<br />Foloseste aceasta optiune daca folosesti un singur domeniu."
 
-#: vcaching.php:582
+#: vcaching.php:579
 msgid "Comma separated hostnames. Varnish uses the hostname to create the cache hash. For each IP, you must set a hostname.<br />Use this option if you use multiple domains."
 msgstr "Domenii separate de virgula. Varnish foloseste domeniul pentru a creea hash-ul pentru cache. Pentru fiecare IP, trebuie sa setezi un domeniu.<br />Foloseste aceasta optiune daca folosesti mai multe domenii."
 
-#: vcaching.php:591
+#: vcaching.php:588
 msgid "Override default TTL on each post/page."
 msgstr "Suprascrie TTL pentru fiecare post/pagina."
 
-#: vcaching.php:600
+#: vcaching.php:597
 msgid "Key used to purge Varnish cache. It is sent to Varnish as X-VC-Purge-Key header. Use a SHA-256 hash.<br />If you can't use ACL's, use this option."
 msgstr "Cheie folosita la stergerea cacheului. Este trimisa catre Varnish ca headerul X-VC-Purge-Key. Foloseste un hash gen SHA-256.<br />Daca nu poti folosi ACL, foloseste aceasta optiune."
 
-#: vcaching.php:610
+#: vcaching.php:607
 msgid "Send all debugging headers to the client. Also shows complete response from Varnish on purge all."
 msgstr "Trimite toate headerele pentru debug catre client. De asemenea va arata raspunsul complet dat de Varnish la actiunea de sterge tot cacheul."
 
@@ -158,10 +162,10 @@ msgstr "Apasa butonul de mai jos pentru a forta stergerea totala a cache-ului."
 msgid "You do not have permission to purge the cache for the whole site. Please contact your adminstrator."
 msgstr "Nu ai permisiunea sa stergi tot cache-ul. Te rugam contacteaza un administrator."
 
-#: vcaching.php:467 vcaching.php:469 vcaching.php:476
+#: vcaching.php:465 vcaching.php:473
 msgid "Varnish Caching"
 msgstr "Caching Varnish"
 
-#: vcaching.php:510
+#: vcaching.php:507
 msgid "Enable"
 msgstr "Activare"
