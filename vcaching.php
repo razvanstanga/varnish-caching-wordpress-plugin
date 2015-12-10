@@ -3,7 +3,7 @@
 Plugin Name: VCaching
 Plugin URI: http://wordpress.org/extend/plugins/vcaching/
 Description: WordPress Varnish Cache integration.
-Version: 1.3
+Version: 1.3.1
 Author: Razvan Stanga
 Author URI: http://git.razvi.ro/
 License: http://www.apache.org/licenses/LICENSE-2.0
@@ -22,6 +22,7 @@ class VCaching {
     protected $varnishHost = null;
     protected $dynamicHost = null;
     protected $ipsToHosts = array();
+    protected $statsJsons = array();
     protected $purgeKey = null;
     protected $getParam = 'purge_varnish_cache';
     protected $postTypes = array('page', 'post');
@@ -29,209 +30,6 @@ class VCaching {
     protected $customFields = array();
     protected $noticeMessage = '';
     protected $debug = 0;
-    protected $varnistStats = array(
-        "client_conn" => "Client connections accepted",
-        "client_drop" => "Connection dropped, no sess/wrk",
-        "client_req" => "Client requests received",
-        "cache_hit" => "Cache hits",
-        "cache_hitpass" => "Cache hits for pass",
-        "cache_miss" => "Cache misses",
-        "backend_conn" => "Backend conn. success",
-        "backend_unhealthy" => "Backend conn. not attempted",
-        "backend_busy" => "Backend conn. too many",
-        "backend_fail" => "Backend conn. failures",
-        "backend_reuse" => "Backend conn. reuses",
-        "backend_toolate" => "Backend conn. was closed",
-        "backend_recycle" => "Backend conn. recycles",
-        "backend_retry" => "Backend conn. retry",
-        "fetch_head" => "Fetch head",
-        "fetch_length" => "Fetch with Length",
-        "fetch_chunked" => "Fetch chunked",
-        "fetch_eof" => "Fetch EOF",
-        "fetch_bad" => "Fetch had bad headers",
-        "fetch_close" => "Fetch wanted close",
-        "fetch_oldhttp" => "Fetch pre HTTP/1.1 closed",
-        "fetch_zero" => "Fetch zero len",
-        "fetch_failed" => "Fetch failed",
-        "fetch_1xx" => "Fetch no body (1xx)",
-        "fetch_204" => "Fetch no body (204)",
-        "fetch_304" => "Fetch no body (304)",
-        "n_sess_mem" => "N struct sess_mem",
-        "n_sess" => "N struct sess",
-        "n_object" => "N struct object",
-        "n_vampireobject" => "N unresurrected objects",
-        "n_objectcore" => "N struct objectcore",
-        "n_objecthead" => "N struct objecthead",
-        "n_waitinglist" => "N struct waitinglist",
-        "n_vbc" => "N struct vbc",
-        "n_wrk" => "N worker threads",
-        "n_wrk_create" => "N worker threads created",
-        "n_wrk_failed" => "N worker threads not created",
-        "n_wrk_max" => "N worker threads limited",
-        "n_wrk_lqueue" => "work request queue length",
-        "n_wrk_queued" => "N queued work requests",
-        "n_wrk_drop" => "N dropped work requests",
-        "n_backend" => "N backends",
-        "n_expired" => "N expired objects",
-        "n_lru_nuked" => "N LRU nuked objects",
-        "n_lru_moved" => "N LRU moved objects",
-        "losthdr" => "HTTP header overflows",
-        "n_objsendfile" => "Objects sent with sendfile",
-        "n_objwrite" => "Objects sent with write",
-        "n_objoverflow" => "Objects overflowing workspace",
-        "s_sess" => "Total Sessions",
-        "s_req" => "Total Requests",
-        "s_pipe" => "Total pipe",
-        "s_pass" => "Total pass",
-        "s_fetch" => "Total fetch",
-        "s_hdrbytes" => "Total header bytes",
-        "s_bodybytes" => "Total body bytes",
-        "sess_closed" => "Session Closed",
-        "sess_pipeline" => "Session Pipeline",
-        "sess_readahead" => "Session Read Ahead",
-        "sess_linger" => "Session Linger",
-        "sess_herd" => "Session herd",
-        "shm_records" => "SHM records",
-        "shm_writes" => "SHM writes",
-        "shm_flushes" => "SHM flushes due to overflow",
-        "shm_cont" => "SHM MTX contention",
-        "shm_cycles" => "SHM cycles through buffer",
-        "sms_nreq" => "SMS allocator requests",
-        "sms_nobj" => "SMS outstanding allocations",
-        "sms_nbytes" => "SMS outstanding bytes",
-        "sms_balloc" => "SMS bytes allocated",
-        "sms_bfree" => "SMS bytes freed",
-        "backend_req" => "Backend requests made",
-        "n_vcl" => "N vcl total",
-        "n_vcl_avail" => "N vcl available",
-        "n_vcl_discard" => "N vcl discarded",
-        "n_ban" => "N total active bans",
-        "n_ban_gone" => "N total gone bans",
-        "n_ban_add" => "N new bans added",
-        "n_ban_retire" => "N old bans deleted",
-        "n_ban_obj_test" => "N objects tested",
-        "n_ban_re_test" => "N regexps tested against",
-        "n_ban_dups" => "N duplicate bans removed",
-        "hcb_nolock" => "HCB Lookups without lock",
-        "hcb_lock" => "HCB Lookups with lock",
-        "hcb_insert" => "HCB Inserts",
-        "esi_errors" => "ESI parse errors (unlock)",
-        "esi_warnings" => "ESI parse warnings (unlock)",
-        "accept_fail" => "Accept failures",
-        "client_drop_late" => "Connection dropped late",
-        "uptime" => "Client uptime",
-        "dir_dns_lookups" => "DNS director lookups",
-        "dir_dns_failed" => "DNS director failed lookups",
-        "dir_dns_hit" => "DNS director cached lookups hit",
-        "dir_dns_cache_full" => "DNS director full dnscache",
-        "vmods" => "Loaded VMODs",
-        "n_gzip" => "Gzip operations",
-        "n_gunzip" => "Gunzip operations",
-        "sess_pipe_overflow" => "Dropped sessions due to session pipe overflow",
-        "LCK.sms.creat" => "Created locks",
-        "LCK.sms.destroy" => "Destroyed locks",
-        "LCK.sms.locks" => "Lock Operations",
-        "LCK.sms.colls" => "Collisions",
-        "LCK.smp.creat" => "Created locks",
-        "LCK.smp.destroy" => "Destroyed locks",
-        "LCK.smp.locks" => "Lock Operations",
-        "LCK.smp.colls" => "Collisions",
-        "LCK.sma.creat" => "Created locks",
-        "LCK.sma.destroy" => "Destroyed locks",
-        "LCK.sma.locks" => "Lock Operations",
-        "LCK.sma.colls" => "Collisions",
-        "LCK.smf.creat" => "Created locks",
-        "LCK.smf.destroy" => "Destroyed locks",
-        "LCK.smf.locks" => "Lock Operations",
-        "LCK.smf.colls" => "Collisions",
-        "LCK.hsl.creat" => "Created locks",
-        "LCK.hsl.destroy" => "Destroyed locks",
-        "LCK.hsl.locks" => "Lock Operations",
-        "LCK.hsl.colls" => "Collisions",
-        "LCK.hcb.creat" => "Created locks",
-        "LCK.hcb.destroy" => "Destroyed locks",
-        "LCK.hcb.locks" => "Lock Operations",
-        "LCK.hcb.colls" => "Collisions",
-        "LCK.hcl.creat" => "Created locks",
-        "LCK.hcl.destroy" => "Destroyed locks",
-        "LCK.hcl.locks" => "Lock Operations",
-        "LCK.hcl.colls" => "Collisions",
-        "LCK.vcl.creat" => "Created locks",
-        "LCK.vcl.destroy" => "Destroyed locks",
-        "LCK.vcl.locks" => "Lock Operations",
-        "LCK.vcl.colls" => "Collisions",
-        "LCK.stat.creat" => "Created locks",
-        "LCK.stat.destroy" => "Destroyed locks",
-        "LCK.stat.locks" => "Lock Operations",
-        "LCK.stat.colls" => "Collisions",
-        "LCK.sessmem.creat" => "Created locks",
-        "LCK.sessmem.destroy" => "Destroyed locks",
-        "LCK.sessmem.locks" => "Lock Operations",
-        "LCK.sessmem.colls" => "Collisions",
-        "LCK.wstat.creat" => "Created locks",
-        "LCK.wstat.destroy" => "Destroyed locks",
-        "LCK.wstat.locks" => "Lock Operations",
-        "LCK.wstat.colls" => "Collisions",
-        "LCK.herder.creat" => "Created locks",
-        "LCK.herder.destroy" => "Destroyed locks",
-        "LCK.herder.locks" => "Lock Operations",
-        "LCK.herder.colls" => "Collisions",
-        "LCK.wq.creat" => "Created locks",
-        "LCK.wq.destroy" => "Destroyed locks",
-        "LCK.wq.locks" => "Lock Operations",
-        "LCK.wq.colls" => "Collisions",
-        "LCK.objhdr.creat" => "Created locks",
-        "LCK.objhdr.destroy" => "Destroyed locks",
-        "LCK.objhdr.locks" => "Lock Operations",
-        "LCK.objhdr.colls" => "Collisions",
-        "LCK.exp.creat" => "Created locks",
-        "LCK.exp.destroy" => "Destroyed locks",
-        "LCK.exp.locks" => "Lock Operations",
-        "LCK.exp.colls" => "Collisions",
-        "LCK.lru.creat" => "Created locks",
-        "LCK.lru.destroy" => "Destroyed locks",
-        "LCK.lru.locks" => "Lock Operations",
-        "LCK.lru.colls" => "Collisions",
-        "LCK.cli.creat" => "Created locks",
-        "LCK.cli.destroy" => "Destroyed locks",
-        "LCK.cli.locks" => "Lock Operations",
-        "LCK.cli.colls" => "Collisions",
-        "LCK.ban.creat" => "Created locks",
-        "LCK.ban.destroy" => "Destroyed locks",
-        "LCK.ban.locks" => "Lock Operations",
-        "LCK.ban.colls" => "Collisions",
-        "LCK.vbp.creat" => "Created locks",
-        "LCK.vbp.destroy" => "Destroyed locks",
-        "LCK.vbp.locks" => "Lock Operations",
-        "LCK.vbp.colls" => "Collisions",
-        "LCK.vbe.creat" => "Created locks",
-        "LCK.vbe.destroy" => "Destroyed locks",
-        "LCK.vbe.locks" => "Lock Operations",
-        "LCK.vbe.colls" => "Collisions",
-        "LCK.backend.creat" => "Created locks",
-        "LCK.backend.destroy" => "Destroyed locks",
-        "LCK.backend.locks" => "Lock Operations",
-        "LCK.backend.colls" => "Collisions",
-        "SMF.s0.c_req" => "Allocator requests",
-        "SMF.s0.c_fail" => "Allocator failures",
-        "SMF.s0.c_bytes" => "Bytes allocated",
-        "SMF.s0.c_freed" => "Bytes freed",
-        "SMF.s0.g_alloc" => "Allocations outstanding",
-        "SMF.s0.g_bytes" => "Bytes outstanding",
-        "SMF.s0.g_space" => "Bytes available",
-        "SMF.s0.g_smf" => "N struct smf",
-        "SMF.s0.g_smf_frag" => "N small free smf",
-        "SMF.s0.g_smf_large" => "N large free smf",
-        "SMA.Transient.c_req" => "Allocator requests",
-        "SMA.Transient.c_fail" => "Allocator failures",
-        "SMA.Transient.c_bytes" => "Bytes allocated",
-        "SMA.Transient.c_freed" => "Bytes freed",
-        "SMA.Transient.g_alloc" => "Allocations outstanding",
-        "SMA.Transient.g_bytes" => "Bytes outstanding",
-        "SMA.Transient.g_space" => "Bytes available",
-        "VBE.default(192.168.0.2,,80).vcls" => "VCL references",
-        "VBE.default(192.168.0.2,,80).happy" => "Happy health probes",
-    );
 
     public function __construct()
     {
@@ -343,12 +141,15 @@ class VCaching {
         $this->varnishIp = get_option($this->prefix . 'ips');
         $this->varnishHost = get_option($this->prefix . 'hosts');
         $this->dynamicHost = get_option($this->prefix . 'dynamic_host');
+        $this->statsJsons = get_option($this->prefix . 'stats_json_file');
         $varnishIp = explode(',', $this->varnishIp);
         $varnishHost = explode(',', $this->varnishHost);
+        $statsJsons = explode(',', $this->statsJsons);
         foreach ($varnishIp as $key => $ip) {
             $this->ipsToHosts[] = array(
                 'ip' => $ip,
-                'host' => $this->dynamicHost ? $_SERVER['HTTP_HOST'] : $varnishHost[$key]
+                'host' => $this->dynamicHost ? $_SERVER['HTTP_HOST'] : $varnishHost[$key],
+                'statsJson' => $statsJsons[$key]
             );
         }
     }
@@ -700,50 +501,79 @@ class VCaching {
                 ?>
             </form>
         <?php elseif($_GET['tab'] == 'stats'): ?>
-            <?php
-                $error = null;
-                if (class_exists('VarnishStat')) {
-                    $vs = new VarnishStat;
-                    try {
-                        $stats = $vs->getSnapshot();
-                    } catch (VarnishException $e) {
-                        $error = $e->getMessage();
-                    }
-                } else {
-                    $error = __('Stats are available only with Varnish PECL extension installed. See <a href="https://pecl.php.net/package/varnish" target="_blank">https://pecl.php.net/package/varnish</a>.', $this->plugin);
-                }
-            ?>
             <h2><?= __('Statistics', $this->plugin) ?></h2>
-            <?php if($error == null): ?>
-            <table class="fixed">
-                <?php if(count($stats)): ?>
-                <thead>
-                    <tr>
-                        <td><strong><?= __('Key', $this->plugin) ?></strong></td>
-                        <td><strong><?= __('Value', $this->plugin) ?></strong></td>
-                        <td><strong><?= __('Description', $this->plugin) ?></strong></td>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($stats as $key => $value): ?>
-                    <tr>
-                        <td><?=$key?></td>
-                        <td><?=$value?></td>
-                        <td><?=isset($this->varnistStats[$key]) ? __($this->varnistStats[$key], $this->plugin) : ''?></td>
-                    </tr>
-                    <?php endforeach; ?>
-                </tbody>
-                <?php else: ?>
-                    <tr>
-                        <td colspan="3">
-                            <?=$error?>
-                        </td>
-                    </tr>
-                <?php endif; ?>
-            </table>
-            <?php else: ?>
-                <?=$error?>
+
+            <div class="wrap">
+
+            <?php if ($_GET['showinfo'] == 1): ?>
+                <div class="updated fade">
+                    <h4><?=__('Setup information', $this->plugin)?></h4>
+                    <?= __('<strong>Short story</strong><br />You must generate by cronjob the JSON stats file. The generated files must be copied on the backend servers in the wordpress root folder.', $this->plugin) ?>
+                    <br /><br />
+                    <?=sprintf(__('<strong>Long story</strong><br />On every Varnish Cache server setup a cronjob that generates the JSON stats file :<br /> %1$s /path/to/be/set/filename.json # every 3 minutes.', $this->plugin), '*/3 * * * *     root   /usr/bin/varnishstat -1j >')?>
+                    <br />
+                    <?= __('The generated files must be copied on the backend servers in the wordpress root folder.', $this->plugin) ?>
+                    <br />
+                    <?=__("Use a different filename for each Varnish Cache server. After this is done, fill in the relative path to the files in Statistics JSONs on the Settings tab.", $this->plugin)?>
+                    <br /><br />
+                    <?= __('Example 1 <br />If you have a single server, both Varnish Cache and the backend on it, use the folowing cronjob:', $this->plugin) ?>
+                    <br />
+                    <?=sprintf(__('%1$s /path/to/the/wordpress/root/varnishstat.json # every 3 minutes.', $this->plugin), '*/3 * * * *     root   /usr/bin/varnishstat -1j >')?>
+                    <br />
+                    <?=__("Then fill in the relative path to the files in Statistics JSONs on the Settings tab :", $this->plugin)?>
+                    <br />
+                    <input type="text" size="100" value="<?=__("/varnishstat.json", $this->plugin)?>" />
+
+                    <br /><br />
+                    <?=__("Example 2 <br />You have 2 Varnish Cache Servers, and 3 backend servers. Setup the cronjob :", $this->plugin)?>
+                    <br />
+                    <?=sprintf(__('VC Server 1 : %1$s # every 3 minutes.', $this->plugin), '*/3 * * * *     root   /usr/bin/varnishstat -1j > /root/varnishstat/server1_3389398cd359cfa443f85ca040da069a.json')?>
+                    <br />
+                    <?=sprintf(__('VC Server 2 : %1$s # every 3 minutes.', $this->plugin), '*/3 * * * *     root   /usr/bin/varnishstat -1j > /root/varnishstat/server2_3389398cd359cfa443f85ca040da069a.json')?>
+                    <br />
+                    <?=__("Copy the files on the backend servers in /path/to/wordpress/root/varnishstat/ folder. Then fill in the relative path to the files in Statistics JSONs on the Settings tab :", $this->plugin)?>
+                    <br />
+
+                    <input type="text" size="100" value="<?=__("/varnishstat/server1_3389398cd359cfa443f85ca040da069a.json,/varnishstat/server2_3389398cd359cfa443f85ca040da069a.json", $this->plugin)?>" />
+                </div>
             <?php endif; ?>
+
+            <h2 class="nav-tab-wrapper">
+                <?php foreach ($this->ipsToHosts as $server => $ipToHost): ?>
+                    <a class="server nav-tab <?php if($server == 0) echo "nav-tab-active"; ?>" href="#" server="<?=$server?>"><?= sprintf(__('Server %1$s', $this->plugin), $ipToHost['ip'])?></a>
+                <?php endforeach; ?>
+            </h2>
+
+            <?php foreach ($this->ipsToHosts as $server => $ipToHost): ?>
+                <div id="server_<?=$server?>" class="servers" <?php if($server == 0) echo ' style="display:none"'; ?>>
+                    <?= sprintf(__('Fetching stats for server %1$s', $this->plugin), $ipToHost['ip']) ?>
+                </div>
+                <script type="text/javascript">
+                    jQuery.getJSON("<?=$ipToHost['statsJson']?>", function(data) {
+                        var server = '#server_<?=$server?>';
+                        jQuery(server).html('');
+                        jQuery(server).append("<?= __('Stats generated on', $this->plugin) ?> " + data.timestamp);
+                        jQuery(server).append('<table class="fixed server_<?=$server?>">');
+                        jQuery(server).append('<thead><tr><td><strong><?= __('Description', $this->plugin) ?></strong></td><td><strong><?= __('Value', $this->plugin) ?></strong></td><td><strong><?= __('Key', $this->plugin) ?></strong></td></tr></thead>');
+                        jQuery(server).append('<tbody id="varnishstats_<?=$server?>"></tbody>');
+                        jQuery(server).append('</table>');
+                        delete data.timestamp;
+                        jQuery.each(data, function(key, val) {
+                            jQuery('#varnishstats_<?=$server?>').append('<tr><td>'+val.description+'</td><td>'+val.value+'</td><td>'+key+'</td></tr>');
+                        });
+                    });
+                </script>
+            <?php endforeach; ?>
+            <script type="text/javascript">
+                jQuery('.nav-tab-wrapper > a.server').click(function(e){
+                    e.preventDefault();
+                    jQuery('.nav-tab-wrapper > a.server').removeClass('nav-tab-active');
+                    jQuery(this).addClass('nav-tab-active');
+                    jQuery(".servers").hide();
+                    jQuery("#server_" + jQuery(this).attr('server')).show();
+                });
+            </script>
+            </div>
         <?php endif; ?>
         </div>
     <?php
@@ -763,6 +593,7 @@ class VCaching {
         }
         add_settings_field($this->prefix . "override", __("Override default TTL", $this->plugin), array($this, $this->prefix . "override"), $this->prefix . 'options', $this->prefix . 'options');
         add_settings_field($this->prefix . "purge_key", __("Purge key", $this->plugin), array($this, $this->prefix . "purge_key"), $this->prefix . 'options', $this->prefix . 'options');
+        add_settings_field($this->prefix . "stats_json_file", __("Statistics JSONs", $this->plugin), array($this, $this->prefix . "stats_json_file"), $this->prefix . 'options', $this->prefix . 'options');
         add_settings_field($this->prefix . "debug", __("Enable debug", $this->plugin), array($this, $this->prefix . "debug"), $this->prefix . 'options', $this->prefix . 'options');
 
         if($_POST['option_page'] == $this->prefix . 'options') {
@@ -774,6 +605,7 @@ class VCaching {
             register_setting($this->prefix . 'options', $this->prefix . "hosts");
             register_setting($this->prefix . 'options', $this->prefix . "override");
             register_setting($this->prefix . 'options', $this->prefix . "purge_key");
+            register_setting($this->prefix . 'options', $this->prefix . "stats_json_file");
             register_setting($this->prefix . 'options', $this->prefix . "debug");
         }
     }
@@ -844,6 +676,16 @@ class VCaching {
             <input type="text" name="varnish_caching_purge_key" id="varnish_caching_purge_key" size="100" value="<?php echo get_option($this->prefix . 'purge_key'); ?>" />
             <p class="description">
                 <?=__('Key used to purge Varnish cache. It is sent to Varnish as X-VC-Purge-Key header. Use a SHA-256 hash.<br />If you can\'t use ACL\'s, use this option.', $this->plugin)?>
+            </p>
+        <?php
+    }
+
+    public function varnish_caching_stats_json_file()
+    {
+        ?>
+            <input type="text" name="varnish_caching_stats_json_file" id="varnish_caching_stats_json_file" size="100" value="<?php echo get_option($this->prefix . 'stats_json_file'); ?>" />
+            <p class="description">
+                <?=sprintf(__('Comma separated relative URLs. One for each IP. <a href="%1$s/wp-admin/index.php?page=vcaching-plugin&tab=stats&showinfo=1">Click here</a> for more info on how to set this up.', $this->plugin), home_url())?>
             </p>
         <?php
     }
