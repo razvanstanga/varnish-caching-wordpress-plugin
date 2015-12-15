@@ -3,7 +3,7 @@
 Plugin Name: VCaching
 Plugin URI: http://wordpress.org/extend/plugins/vcaching/
 Description: WordPress Varnish Cache integration.
-Version: 1.3.1
+Version: 1.3.2
 Author: Razvan Stanga
 Author URI: http://git.razvi.ro/
 License: http://www.apache.org/licenses/LICENSE-2.0
@@ -149,7 +149,7 @@ class VCaching {
             $this->ipsToHosts[] = array(
                 'ip' => $ip,
                 'host' => $this->dynamicHost ? $_SERVER['HTTP_HOST'] : $varnishHost[$key],
-                'statsJson' => $statsJsons[$key]
+                'statsJson' => isset($statsJsons[$key]) ? $statsJsons[$key] : null
             );
         }
     }
@@ -258,13 +258,13 @@ class VCaching {
 
     public function purge_varnish_cache_all_adminbar($admin_bar)
     {
-        $admin_bar->add_menu( array(
+        $admin_bar->add_menu(array(
             'id'    => 'purge-all-varnish-cache',
             'title' => __('Purge ALL Varnish Cache', $this->plugin),
             'href'  => wp_nonce_url(add_query_arg($this->getParam, 1), $this->plugin),
             'meta'  => array(
                 'title' => __('Purge ALL Varnish Cache', $this->plugin),
-            ),
+            )
         ));
     }
 
@@ -504,75 +504,77 @@ class VCaching {
             <h2><?= __('Statistics', $this->plugin) ?></h2>
 
             <div class="wrap">
+                <?php if ($_GET['showinfo'] == 1 || trim($this->statsJsons) == ""): ?>
+                    <div class="fade">
+                        <h4><?=__('Setup information', $this->plugin)?></h4>
+                        <?= __('<strong>Short story</strong><br />You must generate by cronjob the JSON stats file. The generated files must be copied on the backend servers in the wordpress root folder.', $this->plugin) ?>
+                        <br /><br />
+                        <?=sprintf(__('<strong>Long story</strong><br />On every Varnish Cache server setup a cronjob that generates the JSON stats file :<br /> %1$s /path/to/be/set/filename.json # every 3 minutes.', $this->plugin), '*/3 * * * *     root   /usr/bin/varnishstat -1j >')?>
+                        <br />
+                        <?= __('The generated files must be copied on the backend servers in the wordpress root folder.', $this->plugin) ?>
+                        <br />
+                        <?=__("Use a different filename for each Varnish Cache server. After this is done, fill in the relative path to the files in Statistics JSONs on the Settings tab.", $this->plugin)?>
+                        <br /><br />
+                        <?= __('Example 1 <br />If you have a single server, both Varnish Cache and the backend on it, use the folowing cronjob:', $this->plugin) ?>
+                        <br />
+                        <?=sprintf(__('%1$s /path/to/the/wordpress/root/varnishstat.json # every 3 minutes.', $this->plugin), '*/3 * * * *     root   /usr/bin/varnishstat -1j >')?>
+                        <br />
+                        <?=__("Then fill in the relative path to the files in Statistics JSONs on the Settings tab :", $this->plugin)?>
+                        <br />
+                        <input type="text" size="100" value="<?=__("/varnishstat.json", $this->plugin)?>" />
 
-            <?php if ($_GET['showinfo'] == 1): ?>
-                <div class="updated fade">
-                    <h4><?=__('Setup information', $this->plugin)?></h4>
-                    <?= __('<strong>Short story</strong><br />You must generate by cronjob the JSON stats file. The generated files must be copied on the backend servers in the wordpress root folder.', $this->plugin) ?>
-                    <br /><br />
-                    <?=sprintf(__('<strong>Long story</strong><br />On every Varnish Cache server setup a cronjob that generates the JSON stats file :<br /> %1$s /path/to/be/set/filename.json # every 3 minutes.', $this->plugin), '*/3 * * * *     root   /usr/bin/varnishstat -1j >')?>
-                    <br />
-                    <?= __('The generated files must be copied on the backend servers in the wordpress root folder.', $this->plugin) ?>
-                    <br />
-                    <?=__("Use a different filename for each Varnish Cache server. After this is done, fill in the relative path to the files in Statistics JSONs on the Settings tab.", $this->plugin)?>
-                    <br /><br />
-                    <?= __('Example 1 <br />If you have a single server, both Varnish Cache and the backend on it, use the folowing cronjob:', $this->plugin) ?>
-                    <br />
-                    <?=sprintf(__('%1$s /path/to/the/wordpress/root/varnishstat.json # every 3 minutes.', $this->plugin), '*/3 * * * *     root   /usr/bin/varnishstat -1j >')?>
-                    <br />
-                    <?=__("Then fill in the relative path to the files in Statistics JSONs on the Settings tab :", $this->plugin)?>
-                    <br />
-                    <input type="text" size="100" value="<?=__("/varnishstat.json", $this->plugin)?>" />
+                        <br /><br />
+                        <?=__("Example 2 <br />You have 2 Varnish Cache Servers, and 3 backend servers. Setup the cronjob :", $this->plugin)?>
+                        <br />
+                        <?=sprintf(__('VC Server 1 : %1$s # every 3 minutes.', $this->plugin), '*/3 * * * *     root   /usr/bin/varnishstat -1j > /root/varnishstat/server1_3389398cd359cfa443f85ca040da069a.json')?>
+                        <br />
+                        <?=sprintf(__('VC Server 2 : %1$s # every 3 minutes.', $this->plugin), '*/3 * * * *     root   /usr/bin/varnishstat -1j > /root/varnishstat/server2_3389398cd359cfa443f85ca040da069a.json')?>
+                        <br />
+                        <?=__("Copy the files on the backend servers in /path/to/wordpress/root/varnishstat/ folder. Then fill in the relative path to the files in Statistics JSONs on the Settings tab :", $this->plugin)?>
+                        <br />
 
-                    <br /><br />
-                    <?=__("Example 2 <br />You have 2 Varnish Cache Servers, and 3 backend servers. Setup the cronjob :", $this->plugin)?>
-                    <br />
-                    <?=sprintf(__('VC Server 1 : %1$s # every 3 minutes.', $this->plugin), '*/3 * * * *     root   /usr/bin/varnishstat -1j > /root/varnishstat/server1_3389398cd359cfa443f85ca040da069a.json')?>
-                    <br />
-                    <?=sprintf(__('VC Server 2 : %1$s # every 3 minutes.', $this->plugin), '*/3 * * * *     root   /usr/bin/varnishstat -1j > /root/varnishstat/server2_3389398cd359cfa443f85ca040da069a.json')?>
-                    <br />
-                    <?=__("Copy the files on the backend servers in /path/to/wordpress/root/varnishstat/ folder. Then fill in the relative path to the files in Statistics JSONs on the Settings tab :", $this->plugin)?>
-                    <br />
+                        <input type="text" size="100" value="<?=__("/varnishstat/server1_3389398cd359cfa443f85ca040da069a.json,/varnishstat/server2_3389398cd359cfa443f85ca040da069a.json", $this->plugin)?>" />
+                    </div>
+                <?php endif; ?>
 
-                    <input type="text" size="100" value="<?=__("/varnishstat/server1_3389398cd359cfa443f85ca040da069a.json,/varnishstat/server2_3389398cd359cfa443f85ca040da069a.json", $this->plugin)?>" />
-                </div>
-            <?php endif; ?>
+                <?php if(trim($this->statsJsons)): ?>
+                    <h2 class="nav-tab-wrapper">
+                        <?php foreach ($this->ipsToHosts as $server => $ipToHost): ?>
+                            <a class="server nav-tab <?php if($server == 0) echo "nav-tab-active"; ?>" href="#" server="<?=$server?>"><?= sprintf(__('Server %1$s', $this->plugin), $ipToHost['ip'])?></a>
+                        <?php endforeach; ?>
+                    </h2>
 
-            <h2 class="nav-tab-wrapper">
-                <?php foreach ($this->ipsToHosts as $server => $ipToHost): ?>
-                    <a class="server nav-tab <?php if($server == 0) echo "nav-tab-active"; ?>" href="#" server="<?=$server?>"><?= sprintf(__('Server %1$s', $this->plugin), $ipToHost['ip'])?></a>
-                <?php endforeach; ?>
-            </h2>
-
-            <?php foreach ($this->ipsToHosts as $server => $ipToHost): ?>
-                <div id="server_<?=$server?>" class="servers" <?php if($server == 0) echo ' style="display:none"'; ?>>
-                    <?= sprintf(__('Fetching stats for server %1$s', $this->plugin), $ipToHost['ip']) ?>
-                </div>
-                <script type="text/javascript">
-                    jQuery.getJSON("<?=$ipToHost['statsJson']?>", function(data) {
-                        var server = '#server_<?=$server?>';
-                        jQuery(server).html('');
-                        jQuery(server).append("<?= __('Stats generated on', $this->plugin) ?> " + data.timestamp);
-                        jQuery(server).append('<table class="fixed server_<?=$server?>">');
-                        jQuery(server).append('<thead><tr><td><strong><?= __('Description', $this->plugin) ?></strong></td><td><strong><?= __('Value', $this->plugin) ?></strong></td><td><strong><?= __('Key', $this->plugin) ?></strong></td></tr></thead>');
-                        jQuery(server).append('<tbody id="varnishstats_<?=$server?>"></tbody>');
-                        jQuery(server).append('</table>');
-                        delete data.timestamp;
-                        jQuery.each(data, function(key, val) {
-                            jQuery('#varnishstats_<?=$server?>').append('<tr><td>'+val.description+'</td><td>'+val.value+'</td><td>'+key+'</td></tr>');
+                    <?php foreach ($this->ipsToHosts as $server => $ipToHost): ?>
+                        <div id="server_<?=$server?>" class="servers" style="display:<?php if($server == 0) {echo 'block';} else {echo 'none';} ?>">
+                            <?= sprintf(__('Fetching stats for server %1$s', $this->plugin), $ipToHost['ip']) ?>
+                        </div>
+                        <script type="text/javascript">
+                            jQuery.getJSON("<?=$ipToHost['statsJson']?>", function(data) {
+                                var server = '#server_<?=$server?>';
+                                jQuery(server).html('');
+                                jQuery(server).append("<?= __('Stats generated on', $this->plugin) ?> " + data.timestamp);
+                                jQuery(server).append('<table class="fixed server_<?=$server?>">');
+                                jQuery(server).append('<thead><tr><td><strong><?= __('Description', $this->plugin) ?></strong></td><td><strong><?= __('Value', $this->plugin) ?></strong></td><td><strong><?= __('Key', $this->plugin) ?></strong></td></tr></thead>');
+                                jQuery(server).append('<tbody id="varnishstats_<?=$server?>"></tbody>');
+                                jQuery(server).append('</table>');
+                                delete data.timestamp;
+                                console.log(data);
+                                jQuery.each(data, function(key, val) {
+                                    jQuery('#varnishstats_<?=$server?>').append('<tr><td>'+val.description+'</td><td>'+val.value+'</td><td>'+key+'</td></tr>');
+                                });
+                            });
+                        </script>
+                    <?php endforeach; ?>
+                    <script type="text/javascript">
+                        jQuery('.nav-tab-wrapper > a.server').click(function(e){
+                            e.preventDefault();
+                            jQuery('.nav-tab-wrapper > a.server').removeClass('nav-tab-active');
+                            jQuery(this).addClass('nav-tab-active');
+                            jQuery(".servers").hide();
+                            jQuery("#server_" + jQuery(this).attr('server')).show();
                         });
-                    });
-                </script>
-            <?php endforeach; ?>
-            <script type="text/javascript">
-                jQuery('.nav-tab-wrapper > a.server').click(function(e){
-                    e.preventDefault();
-                    jQuery('.nav-tab-wrapper > a.server').removeClass('nav-tab-active');
-                    jQuery(this).addClass('nav-tab-active');
-                    jQuery(".servers").hide();
-                    jQuery("#server_" + jQuery(this).attr('server')).show();
-                });
-            </script>
+                    </script>
+                <?php endif; ?>
             </div>
         <?php endif; ?>
         </div>
