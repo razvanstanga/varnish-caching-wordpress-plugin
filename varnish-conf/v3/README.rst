@@ -17,7 +17,7 @@ to have customers benefit from the performance of a caching proxy without
 limiting what can run on the web backend and without customizing the
 configuration for each customer.
 
-See `wordpress-example.vcl` for an example of how to use this collection
+See `default.vcl` for an example of how to use this collection
 of VCLs to configure Varnish for a WordPress site.
 
 
@@ -97,9 +97,9 @@ Example usage::
 	}
 
 There are several different possible behaviors of HTTP purging which can be
-controlled with the X-Purge-Method HTTP header.  This config will be smart
+controlled with the X-VC-Purge-Method HTTP header.  This config will be smart
 and attempt to automatically pick the best method based on the URL if you
-don't use an X-Purge-Method header.  See the comments in `lib/purge.vcl` for
+don't use an X-VC-Purge-Method header.  See the comments in `lib/purge.vcl` for
 details.
 You can also use the X-VC-Purge-Key method. Generate a MD5/SHA-256 hash and fill it on line
 if (req.http.X-VC-Purge-Key == "hash-to-be-filled-in") {

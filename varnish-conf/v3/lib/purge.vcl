@@ -52,7 +52,7 @@ sub vcl_recv {
                 call purge_page;
             }
         } else {
-            # No X-Purge-Method header was specified.
+            # No X-VC-Purge-Method header was specified.
             # Do our best to figure out which one they want.
             if (req.url ~ "\.\*" || req.url ~ "^\^" || req.url ~ "\$$" || req.url ~ "\\[.?*+^$|()]") {
                 call purge_regex;
