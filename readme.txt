@@ -4,13 +4,13 @@ Contributors: razvanstanga
 Tags: varnish, purge, cache, caching, optimization, performance, traffic
 Requires at least: 4.0
 Tested up to: 4.4
-Stable tag: 1.3.2
+Stable tag: 1.3.3
 License: GPLv2 or later
 
-Wordpress Varnish Cache integration
+Wordpress Varnish Cache 3.x/4.x integration
 
 == Description ==
-Complete Wordpress Varnish Cache integration.
+Complete Wordpress Varnish Cache 3.x/4.x integration.
 
 This plugin handles all integration with Varnish Cache. It was designed for high traffic websites.
 
@@ -65,7 +65,7 @@ You can also use the purge key method. You must fill in lib/purge.vcl the purge 
 
 = What version of Varnish is supported? =
 
-This was built and tested on Varnish 3.x. Varnish 4.x is WIP.
+This was built and tested on Varnish 3.x/4.x.
 
 = Why doesn't every page flush when I make a new post? =
 
@@ -96,6 +96,9 @@ Use the provided Varnish Cache configuration files located in /wp-content/plugin
 Yes.
 
 == Changelog ==
+
+= 1.3.3 =
+* support for Varnish 4
 
 = 1.3.2 =
 * bugfix displaying a single server stats
