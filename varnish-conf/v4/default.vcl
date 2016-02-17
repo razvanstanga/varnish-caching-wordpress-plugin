@@ -53,8 +53,8 @@ sub vcl_recv {
         return(pass);
     }
 
-    # don't cache logged-in users or authors
-    if (req.http.Cookie ~ "wp-postpass_|wordpress_logged_in_|comment_author|PHPSESSID") {
+    # don't cache logged-in users. you can set users `logged in cookie` name in settings
+    if (req.http.Cookie ~ "c005492c65") {
         set req.http.X-VC-GotSession = "true";
         return(pass);
     }
@@ -66,6 +66,7 @@ sub vcl_recv {
 
     # don't cache these special pages
     if (req.url ~ "nocache|wp-admin|wp-(comments-post|login|activate|mail)\.php|bb-admin|server-status|control\.php|bb-login\.php|bb-reset-password\.php|register\.php") {
+        set req.http.X-VC-GotUrl = "true";
         return(pass);
     }
 
@@ -113,25 +114,22 @@ sub vcl_backend_response {
     }
 
     # You don't wish to cache content for logged in users
-    if (bereq.http.Cookie ~ "wp-postpass_|wordpress_logged_in_|comment_author|PHPSESSID") {
+    if (bereq.http.X-VC-GotSession ~ "true" || beresp.http.X-VC-GotSession ~ "true") {
         set beresp.http.X-VC-Cacheable = "NO:Got Session";
         set beresp.uncacheable = true;
         set beresp.ttl = 120s;
-        return (deliver);
 
     # Varnish determined the object was not cacheable
     } else if (beresp.ttl <= 0s) {
         set beresp.http.X-VC-Cacheable = "NO:Not Cacheable";
         set beresp.uncacheable = true;
         set beresp.ttl = 120s;
-        return (deliver);
 
     # You are respecting the Cache-Control=private header from the backend
     } else if (beresp.http.Cache-Control ~ "private") {
         set beresp.http.X-VC-Cacheable = "NO:Cache-Control=private";
         set beresp.uncacheable = true;
         set beresp.ttl = 120s;
-        return (deliver);
 
     # You are respecting the X-VC-Enabled=true header from the backend
     } else if (beresp.http.X-VC-Enabled ~ "true") {

@@ -50,8 +50,8 @@ sub vcl_recv {
         return(pass);
     }
 
-    # don't cache logged-in users or authors
-    if (req.http.Cookie ~ "wp-postpass_|wordpress_logged_in_|comment_author|PHPSESSID") {
+    # don't cache logged-in users. users logged in cookie you can set in settings
+    if (req.http.Cookie ~ "c005492c65") {
         set req.http.X-VC-GotSession = "true";
         return(pass);
     }
@@ -63,6 +63,7 @@ sub vcl_recv {
 
     # don't cache these special pages
     if (req.url ~ "nocache|wp-admin|wp-(comments-post|login|activate|mail)\.php|bb-admin|server-status|control\.php|bb-login\.php|bb-reset-password\.php|register\.php") {
+        set req.http.X-VC-GotUrl = "true";
         return(pass);
     }
 
@@ -111,7 +112,7 @@ sub vcl_fetch {
     }
 
     # You don't wish to cache content for logged in users
-    if (req.http.Cookie ~ "wp-postpass_|wordpress_logged_in_|comment_author|PHPSESSID") {
+    if (req.http.X-VC-GotSession ~ "true" || beresp.http.X-VC-GotSession ~ "true") {
         set beresp.http.X-VC-Cacheable = "NO:Got Session";
         return(hit_for_pass);
 

@@ -68,6 +68,10 @@ class VCaching {
         // send headers to varnish
         add_action('send_headers', array($this, 'send_headers'), 1000000);
 
+        // logged in cookie
+        add_action('wp_login', array($this, 'wp_login'), 1000000);
+        add_action('wp_logout', array($this, 'wp_logout'), 1000000);
+
         // register events to purge post
         foreach ($this->getRegisterEvents() as $event) {
             add_action($event, array($this, 'purge_post'), 10, 2);
@@ -456,6 +460,18 @@ class VCaching {
         }
     }
 
+    public function wp_login()
+    {
+        $cookie = get_option($this->prefix . 'cookie');
+        setcookie($cookie, 1, time()+3600*24*100, COOKIEPATH, COOKIE_DOMAIN, false, true);
+    }
+
+    public function wp_logout()
+    {
+        $cookie = get_option($this->prefix . 'cookie');
+        setcookie($cookie, null, time()-3600*24*100, COOKIEPATH, COOKIE_DOMAIN, false, true);
+    }
+
     public function admin_menu()
     {
         add_action('admin_menu', array($this, 'add_menu_item'));
@@ -492,6 +508,18 @@ class VCaching {
                     submit_button();
                 ?>
             </form>
+            <script type="text/javascript">
+                function generateHash(length, bits, id) {
+                    bits = bits || 36;
+                    var outStr = "", newStr;
+                    while (outStr.length < length)
+                    {
+                        newStr = Math.random().toString(bits).slice(2);
+                        outStr += newStr.slice(0, Math.min(newStr.length, (length - outStr.length)));
+                    }
+                    jQuery('#' + id).val(outStr);
+                }
+            </script>
         <?php elseif($_GET['tab'] == 'console'): ?>
             <form method="post" action="index.php?page=<?=$this->plugin?>-plugin&amp;tab=console">
                 <?php
@@ -504,7 +532,7 @@ class VCaching {
             <h2><?= __('Statistics', $this->plugin) ?></h2>
 
             <div class="wrap">
-                <?php if ($_GET['showinfo'] == 1 || trim($this->statsJsons) == ""): ?>
+                <?php if ($_GET['info'] == 1 || trim($this->statsJsons) == ""): ?>
                     <div class="fade">
                         <h4><?=__('Setup information', $this->plugin)?></h4>
                         <?= __('<strong>Short story</strong><br />You must generate by cronjob the JSON stats file. The generated files must be copied on the backend servers in the wordpress root folder.', $this->plugin) ?>
@@ -595,6 +623,7 @@ class VCaching {
         }
         add_settings_field($this->prefix . "override", __("Override default TTL", $this->plugin), array($this, $this->prefix . "override"), $this->prefix . 'options', $this->prefix . 'options');
         add_settings_field($this->prefix . "purge_key", __("Purge key", $this->plugin), array($this, $this->prefix . "purge_key"), $this->prefix . 'options', $this->prefix . 'options');
+        add_settings_field($this->prefix . "cookie", __("Logged in cookie", $this->plugin), array($this, $this->prefix . "cookie"), $this->prefix . 'options', $this->prefix . 'options');
         add_settings_field($this->prefix . "stats_json_file", __("Statistics JSONs", $this->plugin), array($this, $this->prefix . "stats_json_file"), $this->prefix . 'options', $this->prefix . 'options');
         add_settings_field($this->prefix . "debug", __("Enable debug", $this->plugin), array($this, $this->prefix . "debug"), $this->prefix . 'options', $this->prefix . 'options');
 
@@ -607,6 +636,7 @@ class VCaching {
             register_setting($this->prefix . 'options', $this->prefix . "hosts");
             register_setting($this->prefix . 'options', $this->prefix . "override");
             register_setting($this->prefix . 'options', $this->prefix . "purge_key");
+            register_setting($this->prefix . 'options', $this->prefix . "cookie");
             register_setting($this->prefix . 'options', $this->prefix . "stats_json_file");
             register_setting($this->prefix . 'options', $this->prefix . "debug");
         }
@@ -675,9 +705,21 @@ class VCaching {
     public function varnish_caching_purge_key()
     {
         ?>
-            <input type="text" name="varnish_caching_purge_key" id="varnish_caching_purge_key" size="100" value="<?php echo get_option($this->prefix . 'purge_key'); ?>" />
+            <input type="text" name="varnish_caching_purge_key" id="varnish_caching_purge_key" size="100" value="<?php echo get_option($this->prefix . 'purge_key', 'ff93c3cb929cee86901c7eefc8088e9511c005492c6502a930360c02221cf8f4'); ?>" />
+            <span onclick="generateHash(64, 0, 'varnish_caching_purge_key'); return false;" class="dashicons dashicons-image-rotate" title="<?=__('Generate')?>"></span>
             <p class="description">
-                <?=__('Key used to purge Varnish cache. It is sent to Varnish as X-VC-Purge-Key header. Use a SHA-256 hash.<br />If you can\'t use ACL\'s, use this option.', $this->plugin)?>
+                <?=__('Key used to purge Varnish cache. It is sent to Varnish as X-VC-Purge-Key header. Use a SHA-256 hash.<br />If you can\'t use ACL\'s, use this option. You can set the `purge key` in lib/purge.vcl.<br />Search the default value ff93c3cb929cee86901c7eefc8088e9511c005492c6502a930360c02221cf8f4 to find where to replace it.', $this->plugin)?>
+            </p>
+        <?php
+    }
+
+    public function varnish_caching_cookie()
+    {
+        ?>
+            <input type="text" name="varnish_caching_cookie" id="varnish_caching_cookie" size="10" maxlength="10" value="<?php echo get_option($this->prefix . 'cookie', 'c005492c65'); ?>" />
+            <span onclick="generateHash(10, 0, 'varnish_caching_cookie'); return false;" class="dashicons dashicons-image-rotate" title="<?=__('Generate')?>"></span>
+            <p class="description">
+                <?=__('This module sets a special cookie to tell Varnish that the user is logged in. This should be a random 10 chars string [0-9a-z]. You can set the `logged in cookie` in default.vcl.<br />Search the default value <i>c005492c65</i> to find where to replace it.', $this->plugin)?>
             </p>
         <?php
     }
@@ -687,7 +729,7 @@ class VCaching {
         ?>
             <input type="text" name="varnish_caching_stats_json_file" id="varnish_caching_stats_json_file" size="100" value="<?php echo get_option($this->prefix . 'stats_json_file'); ?>" />
             <p class="description">
-                <?=sprintf(__('Comma separated relative URLs. One for each IP. <a href="%1$s/wp-admin/index.php?page=vcaching-plugin&tab=stats&showinfo=1">Click here</a> for more info on how to set this up.', $this->plugin), home_url())?>
+                <?=sprintf(__('Comma separated relative URLs. One for each IP. <a href="%1$s/wp-admin/index.php?page=vcaching-plugin&tab=stats&info=1">Click here</a> for more info on how to set this up.', $this->plugin), home_url())?>
             </p>
         <?php
     }
