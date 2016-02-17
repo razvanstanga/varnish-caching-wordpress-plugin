@@ -35,14 +35,14 @@ sub vcl_recv {
     }
 
     # redirect yourdomain.com to www.yourdomain.com
-    if (req.http.host ~ "^yourdomain\.com$") {
-        error 750 "http://www.yourdomain.com" + req.url;
-    }
+    #if (req.http.host ~ "^yourdomain\.com$") {
+    #    error 750 "http://www.yourdomain.com" + req.url;
+    #}
 
     # if you use a subdomain for wp-admin, do not cache it
-    if (req.http.host ~ "admin.yourdomain.com") {
-        return(pass);
-    }
+    #if (req.http.host ~ "admin.yourdomain.com") {
+    #    return(pass);
+    #}
 
     ### Check for reasons to bypass the cache!
     # never cache anything except GET/HEAD
@@ -89,10 +89,17 @@ sub vcl_recv {
 }
 
 sub vcl_hash {
-    # Add the browser cookie only if a WordPress cookie found.
-    if (req.http.Cookie ~ "wp-postpass_|wordpress_logged_in_|comment_author|PHPSESSID") {
-        hash_data(req.http.Cookie);
+    set req.http.hash = req.url;
+    if (req.http.host) {
+        set req.http.hash = req.http.hash + "#" + req.http.host;
+    } else {
+        set req.http.hash = req.http.hash + "#" + server.ip;
     }
+    # Add the browser cookie only if a WordPress cookie found. Not needed anymore, left here as example
+    #if (req.http.Cookie ~ "wp-postpass_|wordpress_logged_in_|comment_author|PHPSESSID") {
+    #    hash_data(req.http.Cookie);
+    #    set req.http.hash = req.http.hash + "#" + req.http.Cookie;
+    #}
 }
 
 sub vcl_fetch {
