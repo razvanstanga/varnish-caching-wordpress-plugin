@@ -1,7 +1,5 @@
-backend default {
-    .host = "192.168.0.2";
-    .port = "80";
-}
+include "conf/backend.vcl";
+include "conf/acl.vcl";
 
 import std;
 
@@ -11,17 +9,6 @@ include "lib/purge.vcl";
 include "lib/bigfiles.vcl";
 include "lib/static.vcl";
 
-acl cloudflare {
-    # set this ip to your Railgun IP (if applicable)
-    # "1.2.3.4";
-}
-
-acl purge {
-    "localhost";
-    "127.0.0.1";
-    #"192.168.0.2";
-}
-
 # Pick just one of the following:
 # (or don't use either of these if your application is "adaptive")
 # include "lib/mobile_cache.vcl";
@@ -29,9 +16,6 @@ acl purge {
 
 ### WordPress-specific config ###
 sub vcl_recv {
-    # unset X-VC-Cacheable header from client
-    unset req.http.X-VC-Cacheable;
-
     # pipe on weird http methods
     if (req.request !~ "^GET|HEAD|PUT|POST|TRACE|OPTIONS|DELETE$") {
         return(pipe);

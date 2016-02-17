@@ -1,4 +1,3 @@
-vcl 4.0;
 # bigfiles.vcl -- Bypass Cache for Large Files
 
 sub vcl_backend_response {

@@ -1,4 +1,3 @@
-vcl 4.0;
 # mobile_pass.vcl -- Mobile pass-through support for Varnish
 
 # This simply bypasses the cache for anything that looks like a mobile

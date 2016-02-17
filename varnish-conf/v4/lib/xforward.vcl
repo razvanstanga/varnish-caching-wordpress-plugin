@@ -1,4 +1,3 @@
-vcl 4.0;
 # xforward.vcl -- X-Forwarded-For HTTP Headers
 
 # This should generally be loaded first to make sure that the headers

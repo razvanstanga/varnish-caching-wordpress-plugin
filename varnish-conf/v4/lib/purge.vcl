@@ -1,4 +1,3 @@
-vcl 4.0;
 # purge.vcl -- Cache Purge Library for Varnish
 
 # Regex purging
@@ -34,8 +33,9 @@ sub purge_page {
 # always set the X-VC-Purge-Method header.
 
 sub vcl_recv {
+    set req.http.X-VC-My-Purge-Key = "ff93c3cb929cee86901c7eefc8088e9511c005492c6502a930360c02221cf8f4";
     if (req.method == "PURGE") {
-        if (req.http.X-VC-Purge-Key == "ff93c3cb929cee86901c7eefc8088e9511c005492c6502a930360c02221cf8f4") {
+        if (req.http.X-VC-Purge-Key == req.http.X-VC-My-Purge-Key) {
             set req.http.X-VC-Purge-Key-Auth = "true";
         } else {
             set req.http.X-VC-Purge-Key-Auth = "false";
@@ -65,6 +65,10 @@ sub vcl_recv {
         }
         return (synth(200,"Purged " + req.url + " " + req.http.host));
     }
+    unset req.http.X-VC-My-Purge-Key;
+    # unset Varnish Caching custom headers from client
+    unset req.http.X-VC-Cacheable;
+    unset req.http.X-VC-Debug;
 }
 
 sub vcl_backend_response {
@@ -84,12 +88,16 @@ sub vcl_deliver {
         set resp.http.X-VC-Cache = "MISS";
     }
 
-    if (resp.http.X-VC-Debug ~ "true") {
+    if (req.http.X-VC-Debug ~ "true" || resp.http.X-VC-Debug ~ "true") {
         set resp.http.X-VC-Hash = req.http.hash;
+        if (req.http.X-VC-DebugMessage) {
+            set resp.http.X-VC-DebugMessage = req.http.X-VC-DebugMessage;
+        }
     } else {
         unset resp.http.X-VC-Enabled;
         unset resp.http.X-VC-Cache;
         unset resp.http.X-VC-Debug;
+        unset resp.http.X-VC-DebugMessage;
         unset resp.http.X-VC-Cacheable;
         unset resp.http.X-VC-Purge-Key-Auth;
         unset resp.http.X-VC-TTL;

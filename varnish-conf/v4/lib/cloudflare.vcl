@@ -1,4 +1,3 @@
-vcl 4.0;
 # cloudflare.vcl -- CloudFlare HTTP Headers
 
 # This should generally be loaded first to make sure that the headers

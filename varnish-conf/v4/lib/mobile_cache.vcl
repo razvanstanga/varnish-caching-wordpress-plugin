@@ -1,4 +1,3 @@
-vcl 4.0;
 # mobile_cache.vcl -- Separate cache for mobile clients
 
 # If the User-Agent looks like a mobile device, then we add the string

@@ -1,4 +1,3 @@
-vcl 4.0;
 # bigfiles_pipe.vcl -- Pipe for Large Files
 
 # You must have "import std;" in your main vcl:
