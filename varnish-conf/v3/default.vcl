@@ -29,6 +29,9 @@ acl purge {
 
 ### WordPress-specific config ###
 sub vcl_recv {
+    # unset X-VC-Cacheable header from client
+    unset req.http.X-VC-Cacheable;
+
     # pipe on weird http methods
     if (req.request !~ "^GET|HEAD|PUT|POST|TRACE|OPTIONS|DELETE$") {
         return(pipe);
@@ -39,33 +42,36 @@ sub vcl_recv {
     #    error 750 "http://www.yourdomain.com" + req.url;
     #}
 
-    # if you use a subdomain for wp-admin, do not cache it
+    # if you use a subdomain for admin section, do not cache it
     #if (req.http.host ~ "admin.yourdomain.com") {
+    #    set req.http.X-VC-Cacheable = "NO:Admin domain";
     #    return(pass);
     #}
 
     ### Check for reasons to bypass the cache!
     # never cache anything except GET/HEAD
     if (req.request != "GET" && req.request != "HEAD") {
+        set req.http.X-VC-Cacheable = "NO:Request method:" + req.request;
         return(pass);
     }
 
-    # don't cache logged-in users. users logged in cookie you can set in settings
+    # don't cache logged-in users. you can set users `logged in cookie` name in settings
     if (req.http.Cookie ~ "c005492c65") {
-        set req.http.X-VC-GotSession = "true";
+        set req.http.X-VC-Cacheable = "NO:Found logged in cookie";
         return(pass);
     }
 
     # don't cache ajax requests
     if (req.http.X-Requested-With == "XMLHttpRequest") {
+        set req.http.X-VC-Cacheable = "NO:Requested with: XMLHttpRequest";
         return(pass);
     }
 
-    # don't cache these special pages
-    if (req.url ~ "nocache|wp-admin|wp-(comments-post|login|activate|mail)\.php|bb-admin|server-status|control\.php|bb-login\.php|bb-reset-password\.php|register\.php") {
-        set req.http.X-VC-GotUrl = "true";
-        return(pass);
-    }
+    # don't cache these special pages. Not needed, left here as example
+    #if (req.url ~ "nocache|wp-admin|wp-(comments-post|login|activate|mail)\.php|bb-admin|server-status|control\.php|bb-login\.php|bb-reset-password\.php|register\.php") {
+    #    set req.http.X-VC-Cacheable = "NO:Special page: " + req.url;
+    #    return(pass);
+    #}
 
     ### looks like we might actually cache it!
     # fix up the request
@@ -95,7 +101,7 @@ sub vcl_hash {
     } else {
         set req.http.hash = req.http.hash + "#" + server.ip;
     }
-    # Add the browser cookie only if a WordPress cookie found. Not needed anymore, left here as example
+    # Add the browser cookie only if a WordPress cookie found. Not needed, left here as example
     #if (req.http.Cookie ~ "wp-postpass_|wordpress_logged_in_|comment_author|PHPSESSID") {
     #    hash_data(req.http.Cookie);
     #    set req.http.hash = req.http.hash + "#" + req.http.Cookie;
@@ -118,14 +124,16 @@ sub vcl_fetch {
         set beresp.ttl = 0s;
     }
 
-    # You don't wish to cache content for logged in users
-    if (req.http.X-VC-GotSession ~ "true" || beresp.http.X-VC-GotSession ~ "true") {
-        set beresp.http.X-VC-Cacheable = "NO:Got Session";
+    # Don't cache object as instructed by header bereq.X-VC-Cacheable
+    if (req.http.X-VC-Cacheable ~ "^NO") {
+        set beresp.http.X-VC-Cacheable = req.http.X-VC-Cacheable;
         return(hit_for_pass);
 
     # Varnish determined the object was not cacheable
     } else if (beresp.ttl <= 0s) {
-        set beresp.http.X-VC-Cacheable = "NO:Not Cacheable";
+        if (!beresp.http.X-VC-Cacheable) {
+            set beresp.http.X-VC-Cacheable = "NO:Not cacheable, ttl: "+ beresp.ttl;
+        }
         return(hit_for_pass);
 
     # You are respecting the Cache-Control=private header from the backend
@@ -133,13 +141,17 @@ sub vcl_fetch {
         set beresp.http.X-VC-Cacheable = "NO:Cache-Control=private";
         return(hit_for_pass);
 
-    # You are respecting the X-VC-Enabled=true header from the backend
+    # Cache object
     } else if (beresp.http.X-VC-Enabled ~ "true") {
-        set beresp.http.X-VC-Cacheable = "YES";
+        if (!beresp.http.X-VC-Cacheable) {
+            set beresp.http.X-VC-Cacheable = "YES:Is cacheable, ttl: " + beresp.ttl;
+        }
 
     # Do not cache object
     } else if (beresp.http.X-VC-Enabled ~ "false") {
-        set beresp.http.X-VC-Cacheable = "NO:Disabled";
+        if (!beresp.http.X-VC-Cacheable) {
+            set beresp.http.X-VC-Cacheable = "NO:Disabled";
+        }
         set beresp.ttl = 0s;
     }
 

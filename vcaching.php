@@ -450,7 +450,12 @@ class VCaching {
         $enable = get_option($this->prefix . 'enable');
         if ($enable) {
             Header('X-VC-Enabled: true', true);
-            $ttl = get_option($this->prefix . 'ttl');
+            if (is_user_logged_in()) {
+                Header('X-VC-Cacheable: NO:User is logged in', true);
+                $ttl = 0;
+            } else {
+                $ttl = get_option($this->prefix . 'ttl');
+            }
             Header('X-VC-TTL: ' . $ttl, true);
             if ($debug = get_option($this->prefix . 'debug')) {
                 Header('X-VC-Debug: true', true);
