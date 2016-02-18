@@ -482,6 +482,7 @@ class VCaching {
         add_action('admin_menu', array($this, 'add_menu_item'));
         add_action('admin_init', array($this, 'options_page_fields'));
         add_action('admin_init', array($this, 'console_page_fields'));
+        add_action('admin_init', array($this, 'conf_page_fields'));
     }
 
     public function add_menu_item()
@@ -503,6 +504,7 @@ class VCaching {
                 <a class="nav-tab <?php if($_GET['tab'] == 'console'): ?>nav-tab-active<?php endif; ?>" href="<?php echo admin_url() ?>index.php?page=<?=$this->plugin?>-plugin&amp;tab=console"><?=__('Console', $this->plugin)?></a>
             <?php endif; ?>
             <a class="nav-tab <?php if($_GET['tab'] == 'stats'): ?>nav-tab-active<?php endif; ?>" href="<?php echo admin_url() ?>index.php?page=<?=$this->plugin?>-plugin&amp;tab=stats"><?=__('Statistics', $this->plugin)?></a>
+            <a class="nav-tab <?php if($_GET['tab'] == 'conf'): ?>nav-tab-active<?php endif; ?>" href="<?php echo admin_url() ?>index.php?page=<?=$this->plugin?>-plugin&amp;tab=conf"><?=__('Varnish Config', $this->plugin)?></a>
         </h2>
 
         <?php if(!isset($_GET['tab']) || $_GET['tab'] == 'options'): ?>
@@ -609,6 +611,21 @@ class VCaching {
                     </script>
                 <?php endif; ?>
             </div>
+        <?php elseif($_GET['tab'] == 'conf'): ?>
+            <form method="post" action="options.php">
+                <?php
+                    settings_fields($this->prefix . 'conf');
+                    do_settings_sections($this->prefix . 'conf');
+                    submit_button();
+                ?>
+            </form>
+            <form method="post" action="index.php?page=<?=$this->plugin?>-plugin&amp;tab=conf">
+                <?php
+                    settings_fields($this->prefix . 'download');
+                    do_settings_sections($this->prefix . 'download');
+                    submit_button(__('Download'));
+                ?>
+            </form>
         <?php endif; ?>
         </div>
     <?php
@@ -762,6 +779,144 @@ class VCaching {
             <input type="text" name="varnish_caching_purge_url" size="100" id="varnish_caching_purge_url" value="" />
             <p class="description"><?=__('Relative URL to purge. Example : /wp-content/uploads/.*', $this->plugin)?></p>
         <?php
+    }
+
+    public function conf_page_fields()
+    {
+        add_settings_section('conf', __("Varnish configuration", $this->plugin), null, $this->prefix . 'conf');
+
+        add_settings_field($this->prefix . "varnish_backends", __("Backends", $this->plugin), array($this, $this->prefix . "varnish_backends"), $this->prefix . 'conf', "conf");
+        add_settings_field($this->prefix . "varnish_acls", __("ACLs", $this->plugin), array($this, $this->prefix . "varnish_acls"), $this->prefix . 'conf', "conf");
+
+        if($_POST['option_page'] == $this->prefix . 'conf') {
+            register_setting($this->prefix . 'conf', $this->prefix . "varnish_backends");
+            register_setting($this->prefix . 'conf', $this->prefix . "varnish_acls");
+        }
+
+        add_settings_section('download', __("Get configuration files", $this->plugin), null, $this->prefix . 'download');
+
+        add_settings_field($this->prefix . "varnish_version", __("Version", $this->plugin), array($this, $this->prefix . "varnish_version"), $this->prefix . 'download', "download");
+
+        if($_POST['option_page'] == $this->prefix . 'download') {
+            $version = in_array($_POST['varnish_caching_varnish_version'], array(3,4)) ? $_POST['varnish_caching_varnish_version'] : 3;
+            $tmpfile = tempnam("tmp", "zip");
+            $zip = new ZipArchive();
+            $zip->open($tmpfile, ZipArchive::OVERWRITE);
+            $files = array(
+                'default.vcl' => true,
+                'LICENSE' => '',
+                'README.rst' => '',
+                'conf/acl.vcl' => '',
+                'conf/backend.vcl' => true,
+                'lib/bigfiles.vcl' => array(),
+                'lib/bigfiles_pipe.vcl' => array(),
+                'lib/cloudflare.vcl' => array(),
+                'lib/mobile_cache.vcl' => array(),
+                'lib/mobile_pass.vcl' => array(),
+                'lib/purge.vcl' => true,
+                'lib/static.vcl' => array(),
+                'lib/xforward.vcl' => array(),
+            );
+            foreach ($files as $file => $parse) {
+                $filepath = __DIR__ . '/varnish-conf/v' . $version . '/' . $file;
+                if ($parse) {
+                    $content = $this->_parse_conf_file($version, $file, file_get_contents($filepath));
+                } else {
+                    $content = file_get_contents($filepath);
+                }
+                $zip->addFromString($file, $content);
+            }
+            $zip->close();
+            header('Content-Type: application/zip');
+            header('Content-Length: ' . filesize($tmpfile));
+            header('Content-Disposition: attachment; filename="varnish_v' . $version . '_conf.zip"');
+            readfile($tmpfile);
+            unlink($tmpfile);
+            exit();
+        }
+    }
+
+    public function varnish_caching_varnish_version()
+    {
+        ?>
+            <select name="varnish_caching_varnish_version" id="varnish_caching_varnish_version">
+                <option value="3">3</option>
+                <option value="4">4</option>
+            </select>
+            <p class="description"><?=__('Varnish Cache version', $this->plugin)?></p>
+        <?php
+    }
+
+    public function varnish_caching_varnish_backends()
+    {
+        ?>
+            <input type="text" name="varnish_caching_varnish_backends" id="varnish_caching_varnish_backends" size="100" value="<?php echo get_option($this->prefix . 'varnish_backends'); ?>" />
+            <p class="description"><?=__('Comma separated ip/ip:port. Example : 192.168.0.2,192.168.0.3:8080', $this->plugin)?></p>
+        <?php
+    }
+
+    public function varnish_caching_varnish_acls()
+    {
+        ?>
+            <input type="text" name="varnish_caching_varnish_acls" id="varnish_caching_varnish_acls" size="100" value="<?php echo get_option($this->prefix . 'varnish_acls'); ?>" />
+            <p class="description"><?=__('Comma separated ip/ip range. Example : 192.168.0.2,192.168.1.1/24', $this->plugin)?></p>
+        <?php
+    }
+
+    private function _parse_conf_file($version, $file, $content)
+    {
+        if ($file == 'default.vcl') {
+            $logged_in_cookie = get_option($this->prefix . 'cookie');
+            $content = str_replace('c005492c65', $logged_in_cookie, $content);
+        } else if ($file == 'conf/backend.vcl') {
+            if ($version == 3) {
+                $content = "";
+            } else if ($version == 4) {
+                $content = "import directors;\n\n";
+            }
+            $backend = array();
+            $ips = get_option($this->prefix . 'varnish_backends');
+            $ips = explode(',', $ips);
+            $id = 1;
+            foreach ($ips as $ip) {
+                if (strstr($ip, ":")) {
+                    $_ip = explode(':', $ip);
+                    $ip = $_ip[0];
+                    $port = $_ip[1];
+                } else {
+                    $port = 80;
+                }
+                $content .= "backend backend" . $id . " {\n";
+                $content .= "\t.host = \"" . $ip . "\";\n";
+                $content .= "\t.port = \"" . $port . "\";\n";
+                $content .= "}\n";
+                $backend[3] .= "\t{\n";
+                $backend[3] .= "\t\t.backend = backend" . $id . ";\n";
+                $backend[3] .= "\t}\n";
+                $backend[4] .= "\tbackends.add_backend(backend" . $id . ");\n";
+                $id++;
+            }
+            if ($version == 3) {
+                $content .= "\ndirector backends round-robin {\n";
+                $content .= $backend[3];
+                $content .= "}\n";
+                $content .= "\nsub vcl_recv {\n";
+                $content .= "\tset req.backend = backends;\n";
+                $content .= "}\n";
+            } elseif ($version == 4) {
+                $content .= "\nsub vcl_init {\n";
+                $content .= "\tnew backends = directors.round_robin();\n";
+                $content .= $backend[4];
+                $content .= "}\n";
+                $content .= "\nsub vcl_recv {\n";
+                $content .= "\tset req.backend_hint = backends.backend();\n";
+                $content .= "}\n";
+            }
+        } else if ($file == 'lib/purge.vcl') {
+            $purge_key = get_option($this->prefix . 'purge_key');
+            $content = str_replace('ff93c3cb929cee86901c7eefc8088e9511c005492c6502a930360c02221cf8f4', $purge_key, $content);
+        }
+        return $content;
     }
 }
 
