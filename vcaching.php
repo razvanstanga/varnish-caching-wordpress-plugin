@@ -804,18 +804,18 @@ class VCaching {
             $zip->open($tmpfile, ZipArchive::OVERWRITE);
             $files = array(
                 'default.vcl' => true,
-                'LICENSE' => '',
-                'README.rst' => '',
-                'conf/acl.vcl' => '',
+                'LICENSE' => false,
+                'README.rst' => false,
+                'conf/acl.vcl' => true,
                 'conf/backend.vcl' => true,
-                'lib/bigfiles.vcl' => array(),
-                'lib/bigfiles_pipe.vcl' => array(),
-                'lib/cloudflare.vcl' => array(),
-                'lib/mobile_cache.vcl' => array(),
-                'lib/mobile_pass.vcl' => array(),
+                'lib/bigfiles.vcl' => false,
+                'lib/bigfiles_pipe.vcl' => false,
+                'lib/cloudflare.vcl' => false,
+                'lib/mobile_cache.vcl' => false,
+                'lib/mobile_pass.vcl' => false,
                 'lib/purge.vcl' => true,
-                'lib/static.vcl' => array(),
-                'lib/xforward.vcl' => array(),
+                'lib/static.vcl' => false,
+                'lib/xforward.vcl' => false,
             );
             foreach ($files as $file => $parse) {
                 $filepath = __DIR__ . '/varnish-conf/v' . $version . '/' . $file;
@@ -912,6 +912,20 @@ class VCaching {
                 $content .= "\tset req.backend_hint = backends.backend();\n";
                 $content .= "}\n";
             }
+        } else if ($file == 'conf/acl.vcl') {
+            $acls = get_option($this->prefix . 'varnish_acls');
+            $acls = explode(',', $acls);
+            $content = "acl cloudflare {\n";
+            $content .= "\t# set this ip to your Railgun IP (if applicable)\n";
+            $content .= "\t# \"1.2.3.4\";\n";
+            $content .= "}\n";
+            $content .= "\nacl purge {\n";
+            $content .= "\t\"localhost\";\n";
+            $content .= "\t\"127.0.0.1\";\n";
+            foreach ($acls as $acl) {
+                $content .= "\t\"" . $acl . "\";\n";
+            }
+            $content .= "}\n";
         } else if ($file == 'lib/purge.vcl') {
             $purge_key = get_option($this->prefix . 'purge_key');
             $content = str_replace('ff93c3cb929cee86901c7eefc8088e9511c005492c6502a930360c02221cf8f4', $purge_key, $content);
