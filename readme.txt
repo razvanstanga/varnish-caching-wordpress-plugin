@@ -117,6 +117,7 @@ With the current configuration and the way Wordpress works, this can still happe
 * added `logged in cookie`. This replaces the logged in admin/user based on Wordpress standard cookies to bypass caching
 * moved backends to conf/backend.vcl
 * moved ACLs to conf/acl.vcl
+* updated VCLs. If you are using 1.3 VCLs should upgrade to 1.4
 
 = 1.3.3 =
 * support for Varnish 4
@@ -148,7 +149,8 @@ With the current configuration and the way Wordpress works, this can still happe
 
 == Upgrade Notice ==
 
-* none
+= 1.4 =
+Users using 1.3 Varnish Cache VCLs should upgrade to 1.4
 
 == Screenshots ==
 
