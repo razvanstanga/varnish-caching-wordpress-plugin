@@ -60,9 +60,13 @@ Implemented on :
 
 == Installation ==
 
-Use the Varnish Cache configuration generator. Fill in the backends/ACLs then download your configuration files.
+* You must install Varnish Cache on your server(s)
+* Go to the configuration generator. Fill in the backends/ACLs then download the configuration files
+* Use these configuration files to configure Varnish Cache server(s). Usualy the configuration files are in /etc/varnish. In most cases you must put the downloaded configuration files in /etc/varnish and restart Varnish Cache
+
 Or use the provided Varnish Cache configuration files located in /wp-content/plugins/vcaching/varnish-conf folder.
-You can also use the purge key method. You must fill in lib/purge.vcl the purge key.
+
+You can also use the purge key method if you can't setup ACLs. You must fill in lib/purge.vcl the purge key.
 
 == Frequently Asked Questions ==
 
@@ -101,14 +105,15 @@ Yes.
 
 = What is logged in cookie? =
 
-Logged in cookie is a special cookie this plugin sets upon user loggin. Varnish Cache uses this cookie to bypass caching for logged in users.
+Logged in cookie is a special cookie this plugin sets upon user login. Varnish Cache uses this cookie to bypass caching for logged in users.
+
 This is a small step towards securing your site for denial of service attacks. Denial of service attacks can happen if the attacker bypasses Varnish Cache and hits the backend directly.
 With the current configuration and the way Wordpress works, this can still happen with POST/AJAX requests.
 
 == Changelog ==
 
 = 1.4 =
-* Varnish Cache configuration files generator
+* Varnish Cache configuration generator
 * added `logged in cookie`. This replaces the logged in admin/user based on Wordpress standard cookies to bypass caching
 * moved backends to conf/backend.vcl
 * moved ACLs to conf/acl.vcl
