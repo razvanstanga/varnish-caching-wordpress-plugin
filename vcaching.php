@@ -3,7 +3,7 @@
 Plugin Name: VCaching
 Plugin URI: http://wordpress.org/extend/plugins/vcaching/
 Description: WordPress Varnish Cache integration.
-Version: 1.3.3
+Version: 1.4
 Author: Razvan Stanga
 Author URI: http://git.razvi.ro/
 License: http://www.apache.org/licenses/LICENSE-2.0
@@ -504,7 +504,7 @@ class VCaching {
                 <a class="nav-tab <?php if($_GET['tab'] == 'console'): ?>nav-tab-active<?php endif; ?>" href="<?php echo admin_url() ?>index.php?page=<?=$this->plugin?>-plugin&amp;tab=console"><?=__('Console', $this->plugin)?></a>
             <?php endif; ?>
             <a class="nav-tab <?php if($_GET['tab'] == 'stats'): ?>nav-tab-active<?php endif; ?>" href="<?php echo admin_url() ?>index.php?page=<?=$this->plugin?>-plugin&amp;tab=stats"><?=__('Statistics', $this->plugin)?></a>
-            <a class="nav-tab <?php if($_GET['tab'] == 'conf'): ?>nav-tab-active<?php endif; ?>" href="<?php echo admin_url() ?>index.php?page=<?=$this->plugin?>-plugin&amp;tab=conf"><?=__('Varnish Config', $this->plugin)?></a>
+            <a class="nav-tab <?php if($_GET['tab'] == 'conf'): ?>nav-tab-active<?php endif; ?>" href="<?php echo admin_url() ?>index.php?page=<?=$this->plugin?>-plugin&amp;tab=conf"><?=__('Varnish VCLs', $this->plugin)?></a>
         </h2>
 
         <?php if(!isset($_GET['tab']) || $_GET['tab'] == 'options'): ?>
@@ -587,13 +587,9 @@ class VCaching {
                             jQuery.getJSON("<?=$ipToHost['statsJson']?>", function(data) {
                                 var server = '#server_<?=$server?>';
                                 jQuery(server).html('');
-                                jQuery(server).append("<?= __('Stats generated on', $this->plugin) ?> " + data.timestamp);
-                                jQuery(server).append('<table class="fixed server_<?=$server?>">');
-                                jQuery(server).append('<thead><tr><td><strong><?= __('Description', $this->plugin) ?></strong></td><td><strong><?= __('Value', $this->plugin) ?></strong></td><td><strong><?= __('Key', $this->plugin) ?></strong></td></tr></thead>');
-                                jQuery(server).append('<tbody id="varnishstats_<?=$server?>"></tbody>');
-                                jQuery(server).append('</table>');
+                                jQuery(server).append('<p><?= __('Stats generated on', $this->plugin) ?> ' + data.timestamp + '</p>');
+                                jQuery(server).append('<table class="wp-list-table widefat fixed striped server_<?=$server?>"><thead><tr><td class="manage-column"><strong><?= __('Description', $this->plugin) ?></strong></td><td class="manage-column"><strong><?= __('Value', $this->plugin) ?></strong></td><td class="manage-column"><strong><?= __('Key', $this->plugin) ?></strong></td></tr></thead><tbody id="varnishstats_<?=$server?>"></tbody></table>');
                                 delete data.timestamp;
-                                console.log(data);
                                 jQuery.each(data, function(key, val) {
                                     jQuery('#varnishstats_<?=$server?>').append('<tr><td>'+val.description+'</td><td>'+val.value+'</td><td>'+key+'</td></tr>');
                                 });
@@ -727,7 +723,7 @@ class VCaching {
     public function varnish_caching_purge_key()
     {
         ?>
-            <input type="text" name="varnish_caching_purge_key" id="varnish_caching_purge_key" size="100" value="<?php echo get_option($this->prefix . 'purge_key', 'ff93c3cb929cee86901c7eefc8088e9511c005492c6502a930360c02221cf8f4'); ?>" />
+            <input type="text" name="varnish_caching_purge_key" id="varnish_caching_purge_key" size="100" value="<?php echo get_option($this->prefix . 'purge_key'); ?>" />
             <span onclick="generateHash(64, 0, 'varnish_caching_purge_key'); return false;" class="dashicons dashicons-image-rotate" title="<?=__('Generate')?>"></span>
             <p class="description">
                 <?=__('Key used to purge Varnish cache. It is sent to Varnish as X-VC-Purge-Key header. Use a SHA-256 hash.<br />If you can\'t use ACL\'s, use this option. You can set the `purge key` in lib/purge.vcl.<br />Search the default value ff93c3cb929cee86901c7eefc8088e9511c005492c6502a930360c02221cf8f4 to find where to replace it.', $this->plugin)?>
@@ -738,7 +734,7 @@ class VCaching {
     public function varnish_caching_cookie()
     {
         ?>
-            <input type="text" name="varnish_caching_cookie" id="varnish_caching_cookie" size="10" maxlength="10" value="<?php echo get_option($this->prefix . 'cookie', 'c005492c65'); ?>" />
+            <input type="text" name="varnish_caching_cookie" id="varnish_caching_cookie" size="10" maxlength="10" value="<?php echo get_option($this->prefix . 'cookie'); ?>" />
             <span onclick="generateHash(10, 0, 'varnish_caching_cookie'); return false;" class="dashicons dashicons-image-rotate" title="<?=__('Generate')?>"></span>
             <p class="description">
                 <?=__('This module sets a special cookie to tell Varnish that the user is logged in. This should be a random 10 chars string [0-9a-z]. You can set the `logged in cookie` in default.vcl.<br />Search the default value <i>c005492c65</i> to find where to replace it.', $this->plugin)?>
