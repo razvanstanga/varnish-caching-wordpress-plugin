@@ -112,6 +112,9 @@ With the current configuration and the way Wordpress works, this can still happe
 
 == Changelog ==
 
+= 1.4.1 =
+* Do not cache static files on admin domain
+
 = 1.4 =
 * Varnish Cache configuration generator
 * added `logged in cookie`. This replaces the logged in admin/user based on Wordpress standard cookies to bypass caching
