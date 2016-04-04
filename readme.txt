@@ -3,7 +3,7 @@ Donate link: www.paypal.com/use/email/razvan_stanga@yahoo.com
 Contributors: razvanstanga
 Tags: varnish, purge, cache, caching, optimization, performance, traffic
 Requires at least: 4.0
-Tested up to: 4.4
+Tested up to: 4.5
 Stable tag: 1.4
 License: GPLv2 or later
 
