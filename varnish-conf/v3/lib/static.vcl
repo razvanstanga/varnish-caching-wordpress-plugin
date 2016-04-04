@@ -2,6 +2,11 @@
 
 sub vcl_recv {
     if (req.request ~ "^(GET|HEAD)$" && req.url ~ "\.(jpg|jpeg|gif|png|ico|css|zip|tgz|gz|rar|bz2|pdf|txt|tar|wav|bmp|rtf|js|flv|swf|html|htm)(\?.*)?$") {
+        # if you use a subdomain for admin section, do not cache it
+        #if (req.http.host ~ "admin.yourdomain.com") {
+        #    set req.http.X-VC-Cacheable = "NO:Admin domain";
+        #    return(pass);
+        #}
         # enable this if you want
         #if (req.url ~ "debug") {
         #    set req.http.X-VC-Debug = "true";

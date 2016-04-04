@@ -357,7 +357,7 @@ class VCaching {
                 }
             } else {
                 $this->noticeMessage .= '<br />' . __('Trying to purge URL :', $this->plugin) . $purgeme;
-                $message = preg_match("/<title>(.*)<\/title>/i", $response['body'], $matches);
+                preg_match("/<title>(.*)<\/title>/i", $response['body'], $matches);
                 $this->noticeMessage .= ' => <br /> ' . isset($matches[1]) ? " => " . $matches[1] : $response['body'];
                 $this->noticeMessage .= '<br />';
                 if ($this->debug) {
