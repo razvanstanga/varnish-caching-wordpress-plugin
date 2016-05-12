@@ -4,7 +4,7 @@ Contributors: razvanstanga
 Tags: varnish, purge, cache, caching, optimization, performance, traffic
 Requires at least: 4.0
 Tested up to: 4.5
-Stable tag: 1.4.1
+Stable tag: 1.4.2
 License: GPLv2 or later
 
 Wordpress Varnish Cache 3.x/4.x integration
