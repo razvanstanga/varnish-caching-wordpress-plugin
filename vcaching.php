@@ -1,9 +1,9 @@
 <?php
 /*
-Plugin Name: VCaching
+Plugin Name: Varnish Caching
 Plugin URI: http://wordpress.org/extend/plugins/vcaching/
 Description: WordPress Varnish Cache integration.
-Version: 1.4.1
+Version: 1.4.2
 Author: Razvan Stanga
 Author URI: http://git.razvi.ro/
 License: http://www.apache.org/licenses/LICENSE-2.0
@@ -488,7 +488,7 @@ class VCaching {
     public function add_menu_item()
     {
         if ($this->check_if_purgeable()) {
-            add_menu_page(__('Varnish Caching', $this->plugin), __('Varnish Caching', $this->plugin), 'manage_options', $this->plugin . '-plugin', array($this, 'settings_page'), home_url() . '/wp-content/plugins/' . $this->plugin . '/icon.png', 99);
+            add_menu_page(__('Varnish Caching', $this->plugin), __('Varnish Caching', $this->plugin), 'manage_options', $this->plugin . '-plugin', array($this, 'settings_page'), plugins_url() . '/' . $this->plugin . '/icon.png', 99);
         }
     }
 

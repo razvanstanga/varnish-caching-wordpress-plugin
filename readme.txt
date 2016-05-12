@@ -1,4 +1,4 @@
-=== VCaching ===
+=== Varnish Caching ===
 Donate link: www.paypal.com/use/email/razvan_stanga@yahoo.com
 Contributors: razvanstanga
 Tags: varnish, purge, cache, caching, optimization, performance, traffic
