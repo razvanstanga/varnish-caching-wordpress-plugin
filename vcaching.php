@@ -29,6 +29,7 @@ class VCaching {
     protected $override = 0;
     protected $customFields = array();
     protected $noticeMessage = '';
+    protected $truncateNotice = false;
     protected $debug = 0;
 
     public function __construct()
@@ -63,6 +64,7 @@ class VCaching {
         add_action('wp', array($this, 'buffer_start'), 1000000);
         add_action('shutdown', array($this, 'buffer_end'), 1000000);
 
+        $this->truncateNotice = get_option($this->prefix . 'truncate_notice');
         $this->debug = get_option($this->prefix . 'debug');
 
         // send headers to varnish
@@ -218,7 +220,7 @@ class VCaching {
                                 echo '<p><strong>' . $customField['title'] . '</strong></p>';
                                 echo '<label class="screen-reader-text" for="' . $this->prefix . $customField['name'] . '">' . $customField['title'] . '</label>';
                                 echo '<p><input type="checkbox" name="' . $this->prefix . $customField['name'] . '" id="' . $this->prefix . $customField['name'] . '" value="yes"';
-                                if (get_post_meta( $post->ID, $this->prefix . $customField['name'], true ) == "yes")
+                                if (get_post_meta($post->ID, $this->prefix . $customField['name'], true ) == "yes")
                                     echo ' checked="checked"';
                                 echo '" style="width: auto;" /></p>';
                                 break;
@@ -356,14 +358,19 @@ class VCaching {
                     }
                 }
             } else {
-                $this->noticeMessage .= '<br />' . __('Trying to purge URL :', $this->plugin) . $purgeme;
-                preg_match("/<title>(.*)<\/title>/i", $response['body'], $matches);
-                $this->noticeMessage .= ' => <br /> ' . isset($matches[1]) ? " => " . $matches[1] : $response['body'];
-                $this->noticeMessage .= '<br />';
-                if ($this->debug) {
-                    $this->noticeMessage .= $response['body'] . "<br />";
+                if ($this->truncateNotice && $key <= 2 || $this->truncateNotice == false) {
+                    $this->noticeMessage .= '' . __('Trying to purge URL :', $this->plugin) . $purgeme;
+                    preg_match("/<title>(.*)<\/title>/i", $response['body'], $matches);
+                    $this->noticeMessage .= ' => <br /> ' . isset($matches[1]) ? " => " . $matches[1] : $response['body'];
+                    $this->noticeMessage .= '<br />';
+                    if ($this->debug) {
+                        $this->noticeMessage .= $response['body'] . "<br />";
+                    }
                 }
             }
+        }
+        if ($this->truncateNotice) {
+            $this->noticeMessage .= '<br />' . __('Truncate message activated. Showing only first 3 messages.', $this->plugin);
         }
 
         do_action('after_purge_url', $url, $purgeme);
@@ -388,21 +395,21 @@ class VCaching {
             $categories = get_the_category($postId);
             if ($categories) {
                 foreach ($categories as $cat) {
-                    array_push($listofurls, get_category_link( $cat->term_id));
+                    array_push($listofurls, get_category_link($cat->term_id));
                 }
             }
             // Tag purge based on Donnacha's work in WP Super Cache
             $tags = get_the_tags($postId);
             if ($tags) {
                 foreach ($tags as $tag) {
-                    array_push($listofurls, get_tag_link( $tag->term_id));
+                    array_push($listofurls, get_tag_link($tag->term_id));
                 }
             }
 
             // Author URL
             array_push($listofurls,
-                get_author_posts_url(get_post_field( 'post_author', $postId)),
-                get_author_feed_link(get_post_field( 'post_author', $postId))
+                get_author_posts_url(get_post_field('post_author', $postId)),
+                get_author_feed_link(get_post_field('post_author', $postId))
             );
 
             // Archives and their feeds
@@ -615,13 +622,22 @@ class VCaching {
                     submit_button();
                 ?>
             </form>
-            <form method="post" action="index.php?page=<?=$this->plugin?>-plugin&amp;tab=conf">
+            <?php if (class_exists('ZipArchive')): ?>
+                <form method="post" action="index.php?page=<?=$this->plugin?>-plugin&amp;tab=conf">
+                    <?php
+                        settings_fields($this->prefix . 'download');
+                        do_settings_sections($this->prefix . 'download');
+                        submit_button(__('Download'));
+                    ?>
+                </form>
+            <?php else: ?>
                 <?php
-                    settings_fields($this->prefix . 'download');
-                    do_settings_sections($this->prefix . 'download');
-                    submit_button(__('Download'));
+                    do_settings_sections($this->prefix . 'download_error');
+                    echo sprintf(__('You server\'s PHP configuration is missing the ZIP extension (ZipArchive class is used by VCaching). Please enable the ZIP extension. For more information click <a href="%1$s" target="_blank">here</a>.', $this->plugin), 'http://www.php.net/manual/en/book.zip.php');
+                    echo "<br />";
+                    echo __('If you cannot enable the ZIP extension, please use the provided Varnish Cache configuration files located in /wp-content/plugins/vcaching/varnish-conf folder', $this->plugin);
                 ?>
-            </form>
+            <?php endif; ?>
         <?php endif; ?>
         </div>
     <?php
@@ -643,6 +659,7 @@ class VCaching {
         add_settings_field($this->prefix . "purge_key", __("Purge key", $this->plugin), array($this, $this->prefix . "purge_key"), $this->prefix . 'options', $this->prefix . 'options');
         add_settings_field($this->prefix . "cookie", __("Logged in cookie", $this->plugin), array($this, $this->prefix . "cookie"), $this->prefix . 'options', $this->prefix . 'options');
         add_settings_field($this->prefix . "stats_json_file", __("Statistics JSONs", $this->plugin), array($this, $this->prefix . "stats_json_file"), $this->prefix . 'options', $this->prefix . 'options');
+        add_settings_field($this->prefix . "truncate_notice", __("Truncate notice message", $this->plugin), array($this, $this->prefix . "truncate_notice"), $this->prefix . 'options', $this->prefix . 'options');
         add_settings_field($this->prefix . "debug", __("Enable debug", $this->plugin), array($this, $this->prefix . "debug"), $this->prefix . 'options', $this->prefix . 'options');
 
         if($_POST['option_page'] == $this->prefix . 'options') {
@@ -656,6 +673,7 @@ class VCaching {
             register_setting($this->prefix . 'options', $this->prefix . "purge_key");
             register_setting($this->prefix . 'options', $this->prefix . "cookie");
             register_setting($this->prefix . 'options', $this->prefix . "stats_json_file");
+            register_setting($this->prefix . 'options', $this->prefix . "truncate_notice");
             register_setting($this->prefix . 'options', $this->prefix . "debug");
         }
     }
@@ -752,6 +770,16 @@ class VCaching {
         <?php
     }
 
+    public function varnish_caching_truncate_notice()
+    {
+        ?>
+            <input type="checkbox" name="varnish_caching_truncate_notice" value="1" <?php checked(1, get_option($this->prefix . 'truncate_notice'), true); ?> />
+            <p class="description">
+                <?=__('When using multiple Varnish Cache servers, VCaching shows too many `Trying to purge URL` messages. Check this option to truncate that message.', $this->plugin)?>
+            </p>
+        <?php
+    }
+
     public function varnish_caching_debug()
     {
         ?>
@@ -790,6 +818,9 @@ class VCaching {
         }
 
         add_settings_section('download', __("Get configuration files", $this->plugin), null, $this->prefix . 'download');
+        if (!class_exists('ZipArchive')) {
+            add_settings_section('download_error', __("You cannot download the configuration files", $this->plugin), null, $this->prefix . 'download_error');
+        }
 
         add_settings_field($this->prefix . "varnish_version", __("Version", $this->plugin), array($this, $this->prefix . "varnish_version"), $this->prefix . 'download', "download");
 
