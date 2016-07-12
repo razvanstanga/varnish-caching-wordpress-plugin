@@ -4,7 +4,7 @@ Contributors: razvanstanga
 Tags: varnish, purge, cache, caching, optimization, performance, traffic
 Requires at least: 4.0
 Tested up to: 4.5
-Stable tag: 1.4.2
+Stable tag: 1.4.3
 License: GPLv2 or later
 
 Wordpress Varnish Cache 3.x/4.x integration
@@ -111,6 +111,12 @@ This is a small step towards securing your site for denial of service attacks. D
 With the current configuration and the way Wordpress works, this can still happen with POST/AJAX requests.
 
 == Changelog ==
+
+= 1.4.3 =
+* Truncate option added for too many 'trying to purge' messages. Added check for ZipArchive class to download VCLs.
+
+= 1.4.2 =
+* Bugfix release. Replaced home_url with plugins_url to show VCaching image
 
 = 1.4.1 =
 * Do not cache static files on admin domain
