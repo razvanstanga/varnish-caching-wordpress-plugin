@@ -3,14 +3,14 @@
 Plugin Name: Varnish Caching
 Plugin URI: http://wordpress.org/extend/plugins/vcaching/
 Description: WordPress Varnish Cache integration.
-Version: 1.4.3
+Version: 1.5
 Author: Razvan Stanga
 Author URI: http://git.razvi.ro/
 License: http://www.apache.org/licenses/LICENSE-2.0
 Text Domain: vcaching
 Network: true
 
-Copyright 2015: Razvan Stanga (email: varnish-caching@razvi.ro)
+Copyright 2016: Razvan Stanga (email: varnish-caching@razvi.ro)
 */
 
 class VCaching {
@@ -30,6 +30,7 @@ class VCaching {
     protected $customFields = array();
     protected $noticeMessage = '';
     protected $truncateNotice = false;
+    protected $truncateCount = 0;
     protected $debug = 0;
 
     public function __construct()
@@ -40,6 +41,11 @@ class VCaching {
         $this->blogId = $blog_id;
         add_action('init', array(&$this, 'init'));
         add_action('activity_box_end', array($this, 'varnish_glance'), 100);
+    }
+
+    public function init()
+    {
+        load_plugin_textdomain($this->plugin, false, plugin_basename( dirname( __FILE__ ) ) . '/languages' );
 
         $this->customFields = array(
             array(
@@ -52,14 +58,9 @@ class VCaching {
             )
         );
 
-        $this->setupIpsToHosts();
+        $this->setup_ips_to_hosts();
         $this->purgeKey = ($purgeKey = trim(get_option($this->prefix . 'purge_key'))) ? $purgeKey : null;
         $this->admin_menu();
-    }
-
-    public function init()
-    {
-        load_plugin_textdomain($this->plugin, false, plugin_basename( dirname( __FILE__ ) ) . '/languages' );
 
         add_action('wp', array($this, 'buffer_start'), 1000000);
         add_action('shutdown', array($this, 'buffer_end'), 1000000);
@@ -75,35 +76,59 @@ class VCaching {
         add_action('wp_logout', array($this, 'wp_logout'), 1000000);
 
         // register events to purge post
-        foreach ($this->getRegisterEvents() as $event) {
+        foreach ($this->get_register_events() as $event) {
             add_action($event, array($this, 'purge_post'), 10, 2);
         }
 
-        // purge all cache
-        if (isset($_GET[$this->getParam]) && check_admin_referer($this->plugin)) {
-            if (get_option('permalink_structure') == '' && current_user_can('manage_options')) {
-                add_action('admin_notices' , array($this, 'pretty_permalinks_message'));
-            }
-            if ($this->varnishIp == null) {
-                add_action('admin_notices' , array($this, 'purge_message_no_ips'));
-            } else {
-                $this->purgeCache();
+        // purge all cache from admin bar
+        if ($this->check_if_purgeable()) {
+            add_action('admin_bar_menu', array($this, 'purge_varnish_cache_all_adminbar'), 100);
+            if (isset($_GET[$this->getParam]) && check_admin_referer($this->plugin)) {
+                if (get_option('permalink_structure') == '' && current_user_can('manage_options')) {
+                    add_action('admin_notices' , array($this, 'pretty_permalinks_message'));
+                }
+                if ($this->varnishIp == null) {
+                    add_action('admin_notices' , array($this, 'purge_message_no_ips'));
+                } else {
+                    $this->purge_cache();
+                }
             }
         }
 
+        // purge post/page cache from post/page actions
         if ($this->check_if_purgeable()) {
-            add_action('admin_bar_menu', array($this, 'purge_varnish_cache_all_adminbar'), 100);
+            if(!session_id()) {
+                session_start();
+            }
+            add_filter('post_row_actions', array(
+                &$this,
+                'post_row_actions'
+            ), 0, 2);
+            add_filter('page_row_actions', array(
+                &$this,
+                'page_row_actions'
+            ), 0, 2);
+            if (isset($_GET['action']) && isset($_GET['post_id']) && ($_GET['action'] == 'purge_post' || $_GET['action'] == 'purge_page') && check_admin_referer($this->plugin)) {
+                $this->purge_post($_GET['post_id']);
+                $_SESSION['vcaching_note'] = $this->noticeMessage;
+                $referer = str_replace('purge_varnish_cache=1', '', wp_get_referer());
+                wp_redirect($referer . (strpos($referer, '?') ? '&' : '?') . 'vcaching_note=' . $_GET['action']);
+            }
+            if ($_GET['vcaching_note'] == 'purge_post' || $_GET['vcaching_note'] == 'purge_page') {
+                add_action('admin_notices' , array($this, 'purge_post_page'));
+            }
         }
+
         if ($this->override = get_option($this->prefix . 'override')) {
-            add_action('admin_menu', array($this, 'createCustomFields'));
-            add_action('save_post', array($this, 'saveCustomFields' ), 1, 2);
+            add_action('admin_menu', array($this, 'create_custom_fields'));
+            add_action('save_post', array($this, 'save_custom_fields' ), 1, 2);
             add_action('wp_enqueue_scripts', array($this, 'override_ttl'), 1000);
         }
         add_action('wp_enqueue_scripts', array($this, 'override_homepage_ttl'), 1000);
 
         // console purge
-        if (isset($_POST['varnish_caching_purge_url'])) {
-            $this->purgeUrl(home_url() . $_POST['varnish_caching_purge_url']);
+        if ($this->check_if_purgeable() && isset($_POST['varnish_caching_purge_url'])) {
+            $this->purge_url(home_url() . $_POST['varnish_caching_purge_url']);
             add_action('admin_notices' , array($this, 'purge_message'));
         }
     }
@@ -142,14 +167,16 @@ class VCaching {
         ob_end_flush();
     }
 
-    protected function setupIpsToHosts()
+    protected function setup_ips_to_hosts()
     {
         $this->varnishIp = get_option($this->prefix . 'ips');
         $this->varnishHost = get_option($this->prefix . 'hosts');
         $this->dynamicHost = get_option($this->prefix . 'dynamic_host');
         $this->statsJsons = get_option($this->prefix . 'stats_json_file');
         $varnishIp = explode(',', $this->varnishIp);
+        $varnishIp = apply_filters('vcaching_varnish_ips', $varnishIp);
         $varnishHost = explode(',', $this->varnishHost);
+        $varnishHost = apply_filters('vcaching_varnish_hosts', $varnishHost);
         $statsJsons = explode(',', $this->statsJsons);
         foreach ($varnishIp as $key => $ip) {
             $this->ipsToHosts[] = array(
@@ -160,16 +187,16 @@ class VCaching {
         }
     }
 
-    public function createCustomFields()
+    public function create_custom_fields()
     {
         if (function_exists('add_meta_box')) {
             foreach ($this->postTypes as $postType) {
-                add_meta_box($this->plugin, 'Varnish', array($this, 'displayCustomFields'), $postType, 'side', 'high');
+                add_meta_box($this->plugin, __('Varnish Caching', $this->plugin), array($this, 'display_custom_fields'), $postType, 'side', 'high');
             }
         }
     }
 
-    public function saveCustomFields($post_id, $post)
+    public function save_custom_fields($post_id, $post)
     {
         if (!isset($_POST['vc-custom-fields_wpnonce']) || !wp_verify_nonce($_POST['vc-custom-fields_wpnonce'], 'vc-custom-fields'))
             return;
@@ -188,58 +215,56 @@ class VCaching {
         }
     }
 
-    public function displayCustomFields()
+    public function display_custom_fields()
     {
         global $post;
-        ?>
-            <?php
-            wp_nonce_field('vc-custom-fields', 'vc-custom-fields_wpnonce', false, true);
-            foreach ($this->customFields as $customField) {
-                // Check scope
-                $scope = $customField['scope'];
-                $output = false;
-                foreach ($scope as $scopeItem) {
-                    switch ($scopeItem) {
-                        default: {
-                            if ($post->post_type == $scopeItem)
-                                $output = true;
-                            break;
-                        }
+        wp_nonce_field('vc-custom-fields', 'vc-custom-fields_wpnonce', false, true);
+        foreach ($this->customFields as $customField) {
+            // Check scope
+            $scope = $customField['scope'];
+            $output = false;
+            foreach ($scope as $scopeItem) {
+                switch ($scopeItem) {
+                    default: {
+                        if ($post->post_type == $scopeItem)
+                            $output = true;
+                        break;
                     }
-                    if ($output) break;
                 }
-                // Check capability
-                if (!current_user_can($customField['capability'], $post->ID))
-                    $output = false;
-                // Output if allowed
-                if ($output) { ?>
-                        <?php
-                        switch ($customField['type']) {
-                            case "checkbox": {
-                                // Checkbox
-                                echo '<p><strong>' . $customField['title'] . '</strong></p>';
-                                echo '<label class="screen-reader-text" for="' . $this->prefix . $customField['name'] . '">' . $customField['title'] . '</label>';
-                                echo '<p><input type="checkbox" name="' . $this->prefix . $customField['name'] . '" id="' . $this->prefix . $customField['name'] . '" value="yes"';
-                                if (get_post_meta($post->ID, $this->prefix . $customField['name'], true ) == "yes")
-                                    echo ' checked="checked"';
-                                echo '" style="width: auto;" /></p>';
-                                break;
-                            }
-                            default: {
-                                // Plain text field
-                                echo '<p><b>' . $customField['title'] . '</b></p>';
-                                $value = get_post_meta($post->ID, $this->prefix . $customField[ 'name' ], true);
-                                $default_ttl = get_option($this->prefix . 'ttl');
-                                echo '<p><input type="text" name="' . $this->prefix . $customField['name'] . '" id="' . $this->prefix . $customField['name'] . '" value="' . $value . '" /></p>';
-                                break;
-                            }
-                        }
-                        ?>
-                        <?php if ($customField['description']) echo '<p>' . sprintf($customField['description'], $default_ttl) . '</p>'; ?>
-                <?php
+                if ($output) break;
+            }
+            // Check capability
+            if (!current_user_can($customField['capability'], $post->ID))
+                $output = false;
+            // Output if allowed
+            if ($output) {
+                switch ($customField['type']) {
+                    case "checkbox": {
+                        // Checkbox
+                        echo '<p><strong>' . $customField['title'] . '</strong></p>';
+                        echo '<label class="screen-reader-text" for="' . $this->prefix . $customField['name'] . '">' . $customField['title'] . '</label>';
+                        echo '<p><input type="checkbox" name="' . $this->prefix . $customField['name'] . '" id="' . $this->prefix . $customField['name'] . '" value="yes"';
+                        if (get_post_meta($post->ID, $this->prefix . $customField['name'], true ) == "yes")
+                            echo ' checked="checked"';
+                        echo '" style="width: auto;" /></p>';
+                        break;
+                    }
+                    default: {
+                        // Plain text field
+                        echo '<p><strong>' . $customField['title'] . '</strong></p>';
+                        $value = get_post_meta($post->ID, $this->prefix . $customField[ 'name' ], true);
+                        echo '<p><input type="text" name="' . $this->prefix . $customField['name'] . '" id="' . $this->prefix . $customField['name'] . '" value="' . $value . '" /></p>';
+                        break;
+                    }
                 }
-            } ?>
-        <?php
+            } else {
+                echo '<p><strong>' . $customField['title'] . '</strong></p>';
+                $value = get_post_meta($post->ID, $this->prefix . $customField[ 'name' ], true);
+                echo '<p><input type="text" name="' . $this->prefix . $customField['name'] . '" id="' . $this->prefix . $customField['name'] . '" value="' . $value . '" disabled /></p>';
+            }
+            $default_ttl = get_option($this->prefix . 'ttl');
+            if ($customField['description']) echo '<p>' . sprintf($customField['description'], $default_ttl) . '</p>';
+        }
     }
 
     public function check_if_purgeable()
@@ -249,12 +274,20 @@ class VCaching {
 
     public function purge_message()
     {
-        echo '<div id="message" class="updated fade"><p><strong>' . __('Varnish message:', $this->plugin) . '</strong><br />' . $this->noticeMessage . '</p></div>';
+        echo '<div id="message" class="updated fade"><p><strong>' . __('Varnish Caching', $this->plugin) . '</strong><br /><br />' . $this->noticeMessage . '</p></div>';
     }
 
     public function purge_message_no_ips()
     {
         echo '<div id="message" class="error fade"><p><strong>' . __('Please set the IPs for Varnish!', $this->plugin) . '</strong></p></div>';
+    }
+
+    public function purge_post_page()
+    {
+        if (isset($_SESSION['vcaching_note'])) {
+            echo '<div id="message" class="updated fade"><p><strong>' . __('Varnish Caching', $this->plugin) . '</strong><br /><br />' . $_SESSION['vcaching_note'] . '</p></div>';
+            unset ($_SESSION['vcaching_note']);
+        }
     }
 
     public function pretty_permalinks_message()
@@ -297,7 +330,8 @@ class VCaching {
         echo '<p class="varnish-galce">' . $text . '</p>';
     }
 
-    protected function getRegisterEvents() {
+    protected function get_register_events()
+    {
         $actions = array(
             'save_post',
             'deleted_post',
@@ -309,22 +343,27 @@ class VCaching {
         return apply_filters('vcaching_events', $actions);
     }
 
-    public function purgeCache() {
+    public function purge_cache()
+    {
         $purgeUrls = array_unique($this->purgeUrls);
 
         if (empty($purgeUrls)) {
-            if (isset($_GET[$this->getParam]) && current_user_can('manage_options') && check_admin_referer($this->plugin)) {
-                $this->purgeUrl(home_url() .'/?vc-regex');
+            if (isset($_GET[$this->getParam]) && $this->check_if_purgeable() && check_admin_referer($this->plugin)) {
+                $this->purge_url(home_url() .'/?vc-regex');
             }
         } else {
             foreach($purgeUrls as $url) {
-                $this->purgeUrl($url);
+                $this->purge_url($url);
             }
+        }
+        if ($this->truncateNotice) {
+            $this->noticeMessage .= '<br />' . __('Truncate message activated. Showing only first 3 messages.', $this->plugin);
         }
         add_action('admin_notices' , array($this, 'purge_message'));
     }
 
-    protected function purgeUrl($url) {
+    protected function purge_url($url)
+    {
         $p = parse_url($url);
 
         if (isset($p['query']) && ($p['query'] == 'vc-regex')) {
@@ -358,7 +397,7 @@ class VCaching {
                     }
                 }
             } else {
-                if ($this->truncateNotice && $key <= 2 || $this->truncateNotice == false) {
+                if ($this->truncateNotice && $this->truncateCount <= 2 || $this->truncateNotice == false) {
                     $this->noticeMessage .= '' . __('Trying to purge URL :', $this->plugin) . $purgeme;
                     preg_match("/<title>(.*)<\/title>/i", $response['body'], $matches);
                     $this->noticeMessage .= ' => <br /> ' . isset($matches[1]) ? " => " . $matches[1] : $response['body'];
@@ -367,13 +406,11 @@ class VCaching {
                         $this->noticeMessage .= $response['body'] . "<br />";
                     }
                 }
+                $this->truncateCount++;
             }
         }
-        if ($this->truncateNotice) {
-            $this->noticeMessage .= '<br />' . __('Truncate message activated. Showing only first 3 messages.', $this->plugin);
-        }
 
-        do_action('after_purge_url', $url, $purgeme);
+        do_action('vcaching_after_purge_url', $url, $purgeme);
     }
 
     public function purge_post($postId)
@@ -449,7 +486,7 @@ class VCaching {
         // @param array $purgeUrls the urls (paths) to be purged
         // @param int $postId the id of the new/edited post
         $this->purgeUrls = apply_filters('vcaching_purge_urls', $this->purgeUrls, $postId);
-        $this->purgeCache();
+        $this->purge_cache();
     }
 
     public function send_headers()
@@ -464,7 +501,7 @@ class VCaching {
                 $ttl = get_option($this->prefix . 'ttl');
             }
             Header('X-VC-TTL: ' . $ttl, true);
-            if ($debug = get_option($this->prefix . 'debug')) {
+            if ($this->debug) {
                 Header('X-VC-Debug: true', true);
             }
         } else {
@@ -511,7 +548,7 @@ class VCaching {
                 <a class="nav-tab <?php if($_GET['tab'] == 'console'): ?>nav-tab-active<?php endif; ?>" href="<?php echo admin_url() ?>index.php?page=<?=$this->plugin?>-plugin&amp;tab=console"><?=__('Console', $this->plugin)?></a>
             <?php endif; ?>
             <a class="nav-tab <?php if($_GET['tab'] == 'stats'): ?>nav-tab-active<?php endif; ?>" href="<?php echo admin_url() ?>index.php?page=<?=$this->plugin?>-plugin&amp;tab=stats"><?=__('Statistics', $this->plugin)?></a>
-            <a class="nav-tab <?php if($_GET['tab'] == 'conf'): ?>nav-tab-active<?php endif; ?>" href="<?php echo admin_url() ?>index.php?page=<?=$this->plugin?>-plugin&amp;tab=conf"><?=__('Varnish VCLs', $this->plugin)?></a>
+            <a class="nav-tab <?php if($_GET['tab'] == 'conf'): ?>nav-tab-active<?php endif; ?>" href="<?php echo admin_url() ?>index.php?page=<?=$this->plugin?>-plugin&amp;tab=conf"><?=__('VCLs Generator', $this->plugin)?></a>
         </h2>
 
         <?php if(!isset($_GET['tab']) || $_GET['tab'] == 'options'): ?>
@@ -741,7 +778,7 @@ class VCaching {
     public function varnish_caching_purge_key()
     {
         ?>
-            <input type="text" name="varnish_caching_purge_key" id="varnish_caching_purge_key" size="100" value="<?php echo get_option($this->prefix . 'purge_key'); ?>" />
+            <input type="text" name="varnish_caching_purge_key" id="varnish_caching_purge_key" size="100" maxlength="64" value="<?php echo get_option($this->prefix . 'purge_key'); ?>" />
             <span onclick="generateHash(64, 0, 'varnish_caching_purge_key'); return false;" class="dashicons dashicons-image-rotate" title="<?=__('Generate')?>"></span>
             <p class="description">
                 <?=__('Key used to purge Varnish cache. It is sent to Varnish as X-VC-Purge-Key header. Use a SHA-256 hash.<br />If you can\'t use ACL\'s, use this option. You can set the `purge key` in lib/purge.vcl.<br />Search the default value ff93c3cb929cee86901c7eefc8088e9511c005492c6502a930360c02221cf8f4 to find where to replace it.', $this->plugin)?>
@@ -752,10 +789,10 @@ class VCaching {
     public function varnish_caching_cookie()
     {
         ?>
-            <input type="text" name="varnish_caching_cookie" id="varnish_caching_cookie" size="10" maxlength="10" value="<?php echo get_option($this->prefix . 'cookie'); ?>" />
-            <span onclick="generateHash(10, 0, 'varnish_caching_cookie'); return false;" class="dashicons dashicons-image-rotate" title="<?=__('Generate')?>"></span>
+            <input type="text" name="varnish_caching_cookie" id="varnish_caching_cookie" size="100" maxlength="64" value="<?php echo get_option($this->prefix . 'cookie'); ?>" />
+            <span onclick="generateHash(64, 0, 'varnish_caching_cookie'); return false;" class="dashicons dashicons-image-rotate" title="<?=__('Generate')?>"></span>
             <p class="description">
-                <?=__('This module sets a special cookie to tell Varnish that the user is logged in. This should be a random 10 chars string [0-9a-z]. You can set the `logged in cookie` in default.vcl.<br />Search the default value <i>c005492c65</i> to find where to replace it.', $this->plugin)?>
+                <?=__('This module sets a special cookie to tell Varnish that the user is logged in. Use a SHA-256 hash. You can set the `logged in cookie` in default.vcl.<br />Search the default value <i>flxn34napje9kwbwr4bjwz5miiv9dhgj87dct4ep0x3arr7ldif73ovpxcgm88vs</i> to find where to replace it.', $this->plugin)?>
             </p>
         <?php
     }
@@ -894,7 +931,7 @@ class VCaching {
     {
         if ($file == 'default.vcl') {
             $logged_in_cookie = get_option($this->prefix . 'cookie');
-            $content = str_replace('c005492c65', $logged_in_cookie, $content);
+            $content = str_replace('flxn34napje9kwbwr4bjwz5miiv9dhgj87dct4ep0x3arr7ldif73ovpxcgm88vs', $logged_in_cookie, $content);
         } else if ($file == 'conf/backend.vcl') {
             if ($version == 3) {
                 $content = "";
@@ -958,6 +995,26 @@ class VCaching {
             $content = str_replace('ff93c3cb929cee86901c7eefc8088e9511c005492c6502a930360c02221cf8f4', $purge_key, $content);
         }
         return $content;
+    }
+
+    public function post_row_actions($actions, $post)
+    {
+        if ($this->check_if_purgeable()) {
+            $actions = array_merge($actions, array(
+                'vcaching_purge_post' => sprintf('<a href="%s">' . __('Purge from Varnish', $this->plugin) . '</a>', wp_nonce_url(sprintf('admin.php?page=vcaching-plugin&tab=console&action=purge_post&post_id=%d', $post->ID), $this->plugin))
+            ));
+        }
+        return $actions;
+    }
+
+    public function page_row_actions($actions, $post)
+    {
+        if ($this->check_if_purgeable()) {
+            $actions = array_merge($actions, array(
+                'vcaching_purge_page' => sprintf('<a href="%s">' . __('Purge from Varnish', $this->plugin) . '</a>', wp_nonce_url(sprintf('admin.php?page=vcaching-plugin&tab=console&action=purge_page&post_id=%d', $post->ID), $this->plugin))
+            ));
+        }
+        return $actions;
     }
 }
 

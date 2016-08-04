@@ -43,7 +43,7 @@ sub vcl_recv {
     }
 
     # don't cache logged-in users. you can set users `logged in cookie` name in settings
-    if (req.http.Cookie ~ "c005492c65") {
+    if (req.http.Cookie ~ "flxn34napje9kwbwr4bjwz5miiv9dhgj87dct4ep0x3arr7ldif73ovpxcgm88vs") {
         set req.http.X-VC-Cacheable = "NO:Found logged in cookie";
         return(pass);
     }
