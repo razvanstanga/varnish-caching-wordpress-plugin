@@ -3,8 +3,8 @@ Donate link: www.paypal.com/use/email/razvan_stanga@yahoo.com
 Contributors: razvanstanga
 Tags: varnish, purge, cache, caching, optimization, performance, traffic
 Requires at least: 4.0
-Tested up to: 4.5
-Stable tag: 1.5
+Tested up to: 4.6
+Stable tag: 1.5.1
 License: GPLv2 or later
 
 Wordpress Varnish Cache 3.x/4.x integration
@@ -53,10 +53,6 @@ Inspired from the following :
 
 * https://wordpress.org/plugins/varnish-http-purge/
 * https://github.com/dreamhost/varnish-vcl-collection/
-
-Implemented on :
-
-* www.bvoltaire.fr
 
 == Installation ==
 
@@ -111,6 +107,10 @@ This is a small step towards securing your site for denial of service attacks. D
 With the current configuration and the way Wordpress works, this can still happen with POST/AJAX requests.
 
 == Changelog ==
+
+= 1.5.1 =
+* fixed PHP notices
+* tested with 4.6
 
 = 1.5 =
 * `Purge from Varnish` post/page action link

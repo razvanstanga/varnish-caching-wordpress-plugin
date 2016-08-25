@@ -3,7 +3,7 @@
 Plugin Name: Varnish Caching
 Plugin URI: http://wordpress.org/extend/plugins/vcaching/
 Description: WordPress Varnish Cache integration.
-Version: 1.5
+Version: 1.5.1
 Author: Razvan Stanga
 Author URI: http://git.razvi.ro/
 License: http://www.apache.org/licenses/LICENSE-2.0
@@ -114,7 +114,7 @@ class VCaching {
                 $referer = str_replace('purge_varnish_cache=1', '', wp_get_referer());
                 wp_redirect($referer . (strpos($referer, '?') ? '&' : '?') . 'vcaching_note=' . $_GET['action']);
             }
-            if ($_GET['vcaching_note'] == 'purge_post' || $_GET['vcaching_note'] == 'purge_page') {
+            if (isset($_GET['vcaching_note']) && ($_GET['vcaching_note'] == 'purge_post' || $_GET['vcaching_note'] == 'purge_page')) {
                 add_action('admin_notices' , array($this, 'purge_post_page'));
             }
         }
@@ -699,7 +699,7 @@ class VCaching {
         add_settings_field($this->prefix . "truncate_notice", __("Truncate notice message", $this->plugin), array($this, $this->prefix . "truncate_notice"), $this->prefix . 'options', $this->prefix . 'options');
         add_settings_field($this->prefix . "debug", __("Enable debug", $this->plugin), array($this, $this->prefix . "debug"), $this->prefix . 'options', $this->prefix . 'options');
 
-        if($_POST['option_page'] == $this->prefix . 'options') {
+        if(isset($_POST['option_page']) && $_POST['option_page'] == $this->prefix . 'options') {
             register_setting($this->prefix . 'options', $this->prefix . "enable");
             register_setting($this->prefix . 'options', $this->prefix . "ttl");
             register_setting($this->prefix . 'options', $this->prefix . "homepage_ttl");
@@ -849,7 +849,7 @@ class VCaching {
         add_settings_field($this->prefix . "varnish_backends", __("Backends", $this->plugin), array($this, $this->prefix . "varnish_backends"), $this->prefix . 'conf', "conf");
         add_settings_field($this->prefix . "varnish_acls", __("ACLs", $this->plugin), array($this, $this->prefix . "varnish_acls"), $this->prefix . 'conf', "conf");
 
-        if($_POST['option_page'] == $this->prefix . 'conf') {
+        if(isset($_POST['option_page']) && $_POST['option_page'] == $this->prefix . 'conf') {
             register_setting($this->prefix . 'conf', $this->prefix . "varnish_backends");
             register_setting($this->prefix . 'conf', $this->prefix . "varnish_acls");
         }
@@ -861,7 +861,7 @@ class VCaching {
 
         add_settings_field($this->prefix . "varnish_version", __("Version", $this->plugin), array($this, $this->prefix . "varnish_version"), $this->prefix . 'download', "download");
 
-        if($_POST['option_page'] == $this->prefix . 'download') {
+        if(isset($_POST['option_page']) && $_POST['option_page'] == $this->prefix . 'download') {
             $version = in_array($_POST['varnish_caching_varnish_version'], array(3,4)) ? $_POST['varnish_caching_varnish_version'] : 3;
             $tmpfile = tempnam("tmp", "zip");
             $zip = new ZipArchive();
