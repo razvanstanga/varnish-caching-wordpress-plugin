@@ -451,7 +451,7 @@ class VCaching {
 
             // Archives and their feeds
             $archiveurls = array();
-            if ( get_post_type_archive_link(get_post_type($postId)) == true) {
+            if (get_post_type_archive_link(get_post_type($postId)) == true) {
                 array_push($listofurls,
                     get_post_type_archive_link( get_post_type($postId)),
                     get_post_type_archive_feed_link( get_post_type($postId))
@@ -473,8 +473,13 @@ class VCaching {
 
             // Home Page and (if used) posts page
             array_push($listofurls, home_url('/'));
-            if ( get_option('show_on_front') == 'page') {
+            if (get_option('show_on_front') == 'page') {
                 array_push($listofurls, get_permalink(get_option('page_for_posts')));
+            }
+
+            // If Automattic's AMP is installed, add AMP permalink
+            if (function_exists('amp_get_permalink')) {
+                array_push($listofurls, amp_get_permalink($postId));
             }
 
             // Now flush all the URLs we've collected
@@ -1021,6 +1026,6 @@ class VCaching {
 $vcaching = new VCaching();
 
 // WP-CLI
-if ( defined('WP_CLI') && WP_CLI ) {
+if (defined('WP_CLI') && WP_CLI) {
     include('wp-cli.php');
 }
