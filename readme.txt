@@ -1,10 +1,10 @@
 === Varnish Caching ===
-Donate link: www.paypal.com/use/email/razvan_stanga@yahoo.com
+Donate link: http://git.razvi.ro/
 Contributors: razvanstanga
 Tags: varnish, purge, cache, caching, optimization, performance, traffic
 Requires at least: 4.0
-Tested up to: 4.6
-Stable tag: 1.5.2
+Tested up to: 4.7
+Stable tag: 1.5.3
 License: GPLv2 or later
 
 Wordpress Varnish Cache 3.x/4.x integration
@@ -105,6 +105,14 @@ Logged in cookie is a special cookie this plugin sets upon user login. Varnish C
 
 This is a small step towards securing your site for denial of service attacks. Denial of service attacks can happen if the attacker bypasses Varnish Cache and hits the backend directly.
 With the current configuration and the way Wordpress works, this can still happen with POST/AJAX requests.
+
+= Available filters =
+
+* `vcaching_varnish_ips` - change the IPs set in Settings
+* `vcaching_varnish_hosts` - change the Hosts set in Settings
+* `vcaching_events` - add events to trigger the purge
+* `vcaching_schema` - change the schema (default is http://)
+* `vcaching_purge_urls` - add additional URLs to purge
 
 == Changelog ==
 

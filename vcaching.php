@@ -3,7 +3,7 @@
 Plugin Name: Varnish Caching
 Plugin URI: http://wordpress.org/extend/plugins/vcaching/
 Description: WordPress Varnish Cache integration.
-Version: 1.5.2
+Version: 1.5.3
 Author: Razvan Stanga
 Author URI: http://git.razvi.ro/
 License: http://www.apache.org/licenses/LICENSE-2.0
@@ -32,6 +32,7 @@ class VCaching {
     protected $truncateNotice = false;
     protected $truncateCount = 0;
     protected $debug = 0;
+    protected $vclGeneratorTab = true;
 
     public function __construct()
     {
@@ -327,7 +328,7 @@ class VCaching {
         } else {
             $text = $intro . ' ' . $nopermission;
         }
-        echo '<p class="varnish-galce">' . $text . '</p>';
+        echo '<p class="varnish-glance">' . $text . '</p>';
     }
 
     protected function get_register_events()
@@ -531,7 +532,9 @@ class VCaching {
         add_action('admin_menu', array($this, 'add_menu_item'));
         add_action('admin_init', array($this, 'options_page_fields'));
         add_action('admin_init', array($this, 'console_page_fields'));
-        add_action('admin_init', array($this, 'conf_page_fields'));
+        if ($this->vclGeneratorTab) {
+            add_action('admin_init', array($this, 'conf_page_fields'));
+        }
     }
 
     public function add_menu_item()
@@ -553,7 +556,9 @@ class VCaching {
                 <a class="nav-tab <?php if($_GET['tab'] == 'console'): ?>nav-tab-active<?php endif; ?>" href="<?php echo admin_url() ?>index.php?page=<?=$this->plugin?>-plugin&amp;tab=console"><?=__('Console', $this->plugin)?></a>
             <?php endif; ?>
             <a class="nav-tab <?php if($_GET['tab'] == 'stats'): ?>nav-tab-active<?php endif; ?>" href="<?php echo admin_url() ?>index.php?page=<?=$this->plugin?>-plugin&amp;tab=stats"><?=__('Statistics', $this->plugin)?></a>
-            <a class="nav-tab <?php if($_GET['tab'] == 'conf'): ?>nav-tab-active<?php endif; ?>" href="<?php echo admin_url() ?>index.php?page=<?=$this->plugin?>-plugin&amp;tab=conf"><?=__('VCLs Generator', $this->plugin)?></a>
+            <?php if ($this->vclGeneratorTab): ?>
+                <a class="nav-tab <?php if($_GET['tab'] == 'conf'): ?>nav-tab-active<?php endif; ?>" href="<?php echo admin_url() ?>index.php?page=<?=$this->plugin?>-plugin&amp;tab=conf"><?=__('VCLs Generator', $this->plugin)?></a>
+            <?php endif; ?>
         </h2>
 
         <?php if(!isset($_GET['tab']) || $_GET['tab'] == 'options'): ?>
