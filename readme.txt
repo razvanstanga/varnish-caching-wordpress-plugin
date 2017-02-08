@@ -117,7 +117,7 @@ With the current configuration and the way Wordpress works, this can still happe
 == Changelog ==
 
 = 1.5.4 =
-* improvements to Varnish configs like websocket support, remove the Google Analytics added parameters, strip hash, remove unnecessary cookies
+* improvements to Varnish configs like websocket support, remove the Google Analytics added parameters, strip hash, remove unnecessary cookies. thanks @pavelprischepa
 
 = 1.5.3 =
 * hardcoded on/off VCL Generator, filters added to readme
