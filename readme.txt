@@ -4,7 +4,7 @@ Contributors: razvanstanga
 Tags: varnish, purge, cache, caching, optimization, performance, traffic
 Requires at least: 4.0
 Tested up to: 4.7
-Stable tag: 1.5.3
+Stable tag: 1.5.4
 License: GPLv2 or later
 
 Wordpress Varnish Cache 3.x/4.x integration
@@ -115,6 +115,12 @@ With the current configuration and the way Wordpress works, this can still happe
 * `vcaching_purge_urls` - add additional URLs to purge
 
 == Changelog ==
+
+= 1.5.4 =
+* improvements to Varnish configs like websocket support, remove the Google Analytics added parameters, strip hash, remove unnecessary cookies
+
+= 1.5.3 =
+* hardcoded on/off VCL Generator, filters added to readme
 
 = 1.5.2 =
 * added AMP URL purge
