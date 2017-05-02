@@ -3,14 +3,14 @@
 Plugin Name: Varnish Caching
 Plugin URI: http://wordpress.org/extend/plugins/vcaching/
 Description: WordPress Varnish Cache integration.
-Version: 1.5.5
+Version: 1.6
 Author: Razvan Stanga
 Author URI: http://git.razvi.ro/
 License: http://www.apache.org/licenses/LICENSE-2.0
 Text Domain: vcaching
 Network: true
 
-Copyright 2016: Razvan Stanga (email: varnish-caching@razvi.ro)
+Copyright 2017: Razvan Stanga (email: varnish-caching@razvi.ro)
 */
 
 class VCaching {
@@ -875,7 +875,7 @@ class VCaching {
         add_settings_field($this->prefix . "varnish_version", __("Version", $this->plugin), array($this, $this->prefix . "varnish_version"), $this->prefix . 'download', "download");
 
         if(isset($_POST['option_page']) && $_POST['option_page'] == $this->prefix . 'download') {
-            $version = in_array($_POST['varnish_caching_varnish_version'], array(3,4)) ? $_POST['varnish_caching_varnish_version'] : 3;
+            $version = in_array($_POST['varnish_caching_varnish_version'], array(3,4,5)) ? $_POST['varnish_caching_varnish_version'] : 3;
             $tmpfile = tempnam("tmp", "zip");
             $zip = new ZipArchive();
             $zip->open($tmpfile, ZipArchive::OVERWRITE);
@@ -919,6 +919,7 @@ class VCaching {
             <select name="varnish_caching_varnish_version" id="varnish_caching_varnish_version">
                 <option value="3">3</option>
                 <option value="4">4</option>
+                <option value="5">5</option>
             </select>
             <p class="description"><?=__('Varnish Cache version', $this->plugin)?></p>
         <?php
@@ -948,7 +949,7 @@ class VCaching {
         } else if ($file == 'conf/backend.vcl') {
             if ($version == 3) {
                 $content = "";
-            } else if ($version == 4) {
+            } else if ($version == 4 || $version == 5) {
                 $content = "import directors;\n\n";
             }
             $backend = array();
@@ -980,7 +981,7 @@ class VCaching {
                 $content .= "\nsub vcl_recv {\n";
                 $content .= "\tset req.backend = backends;\n";
                 $content .= "}\n";
-            } elseif ($version == 4) {
+            } elseif ($version == 4 || $version == 5) {
                 $content .= "\nsub vcl_init {\n";
                 $content .= "\tnew backends = directors.round_robin();\n";
                 $content .= $backend[4];
