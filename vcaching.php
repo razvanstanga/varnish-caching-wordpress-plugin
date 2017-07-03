@@ -3,7 +3,7 @@
 Plugin Name: Varnish Caching
 Plugin URI: http://wordpress.org/extend/plugins/vcaching/
 Description: WordPress Varnish Cache integration.
-Version: 1.6
+Version: 1.6.1
 Author: Razvan Stanga
 Author URI: http://git.razvi.ro/
 License: http://www.apache.org/licenses/LICENSE-2.0
@@ -30,9 +30,11 @@ class VCaching {
     protected $customFields = array();
     protected $noticeMessage = '';
     protected $truncateNotice = false;
+    protected $truncateNoticeShown = false;
     protected $truncateCount = 0;
     protected $debug = 0;
     protected $vclGeneratorTab = true;
+    protected $purgeOnMenuSave = false;
 
     public function __construct()
     {
@@ -176,6 +178,7 @@ class VCaching {
         $this->varnishHost = get_option($this->prefix . 'hosts');
         $this->dynamicHost = get_option($this->prefix . 'dynamic_host');
         $this->statsJsons = get_option($this->prefix . 'stats_json_file');
+        $this->purgeOnMenuSave = get_option($this->prefix . 'purge_menu_save');
         $varnishIp = explode(',', $this->varnishIp);
         $varnishIp = apply_filters('vcaching_varnish_ips', $varnishIp);
         $varnishHost = explode(',', $this->varnishHost);
@@ -360,7 +363,8 @@ class VCaching {
                 $this->purge_url($url);
             }
         }
-        if ($this->truncateNotice) {
+        if ($this->truncateNotice && $this->truncateNoticeShown == false) {
+            $this->truncateNoticeShown = true;
             $this->noticeMessage .= '<br />' . __('Truncate message activated. Showing only first 3 messages.', $this->plugin);
         }
         add_action('admin_notices' , array($this, 'purge_message'));
@@ -417,11 +421,15 @@ class VCaching {
         do_action('vcaching_after_purge_url', $url, $purgeme);
     }
 
-    public function purge_post($postId)
+    public function purge_post($postId, $post)
     {
+        // Do not purge menu items
+        if ($post->post_type == 'nav_menu_item' && $this->purgeOnMenuSave == false) {
+            return;
+        }
+
         // If this is a valid post we want to purge the post, the home page and any associated tags & cats
         // If not, purge everything on the site.
-
         $validPostStatus = array('publish', 'trash');
         $thisPostStatus  = get_post_status($postId);
 
@@ -710,6 +718,7 @@ class VCaching {
         add_settings_field($this->prefix . "cookie", __("Logged in cookie", $this->plugin), array($this, $this->prefix . "cookie"), $this->prefix . 'options', $this->prefix . 'options');
         add_settings_field($this->prefix . "stats_json_file", __("Statistics JSONs", $this->plugin), array($this, $this->prefix . "stats_json_file"), $this->prefix . 'options', $this->prefix . 'options');
         add_settings_field($this->prefix . "truncate_notice", __("Truncate notice message", $this->plugin), array($this, $this->prefix . "truncate_notice"), $this->prefix . 'options', $this->prefix . 'options');
+        add_settings_field($this->prefix . "purge_menu_save", __("Purge on save menu", $this->plugin), array($this, $this->prefix . "purge_menu_save"), $this->prefix . 'options', $this->prefix . 'options');
         add_settings_field($this->prefix . "debug", __("Enable debug", $this->plugin), array($this, $this->prefix . "debug"), $this->prefix . 'options', $this->prefix . 'options');
 
         if(isset($_POST['option_page']) && $_POST['option_page'] == $this->prefix . 'options') {
@@ -724,6 +733,7 @@ class VCaching {
             register_setting($this->prefix . 'options', $this->prefix . "cookie");
             register_setting($this->prefix . 'options', $this->prefix . "stats_json_file");
             register_setting($this->prefix . 'options', $this->prefix . "truncate_notice");
+            register_setting($this->prefix . 'options', $this->prefix . "purge_menu_save");
             register_setting($this->prefix . 'options', $this->prefix . "debug");
         }
     }
@@ -826,6 +836,16 @@ class VCaching {
             <input type="checkbox" name="varnish_caching_truncate_notice" value="1" <?php checked(1, get_option($this->prefix . 'truncate_notice'), true); ?> />
             <p class="description">
                 <?=__('When using multiple Varnish Cache servers, VCaching shows too many `Trying to purge URL` messages. Check this option to truncate that message.', $this->plugin)?>
+            </p>
+        <?php
+    }
+
+    public function varnish_caching_purge_menu_save()
+    {
+        ?>
+            <input type="checkbox" name="varnish_caching_purge_menu_save" value="1" <?php checked(1, get_option($this->prefix . 'purge_menu_save'), true); ?> />
+            <p class="description">
+                <?=__('Purge menu related pages when a menu is saved.', $this->plugin)?>
             </p>
         <?php
     }
