@@ -35,6 +35,7 @@ class VCaching {
     protected $debug = 0;
     protected $vclGeneratorTab = true;
     protected $purgeOnMenuSave = false;
+    protected $currentTab;
 
     public function __construct()
     {
@@ -134,6 +135,7 @@ class VCaching {
             $this->purge_url(home_url() . $_POST['varnish_caching_purge_url']);
             add_action('admin_notices' , array($this, 'purge_message'));
         }
+        $this->currentTab = isset($_GET['tab']) ? $_GET['tab'] : 'options';
     }
 
     public function override_ttl($post)
@@ -562,17 +564,17 @@ class VCaching {
         <h1><?=__('Varnish Caching', $this->plugin)?></h1>
 
         <h2 class="nav-tab-wrapper">
-            <a class="nav-tab <?php if(!isset($_GET['tab']) || $_GET['tab'] == 'options'): ?>nav-tab-active<?php endif; ?>" href="<?php echo admin_url() ?>index.php?page=<?=$this->plugin?>-plugin&amp;tab=options"><?=__('Settings', $this->plugin)?></a>
+            <a class="nav-tab <?php if($this->currentTab == 'options'): ?>nav-tab-active<?php endif; ?>" href="<?php echo admin_url() ?>index.php?page=<?=$this->plugin?>-plugin&amp;tab=options"><?=__('Settings', $this->plugin)?></a>
             <?php if ($this->check_if_purgeable()): ?>
-                <a class="nav-tab <?php if($_GET['tab'] == 'console'): ?>nav-tab-active<?php endif; ?>" href="<?php echo admin_url() ?>index.php?page=<?=$this->plugin?>-plugin&amp;tab=console"><?=__('Console', $this->plugin)?></a>
+                <a class="nav-tab <?php if($this->currentTab == 'console'): ?>nav-tab-active<?php endif; ?>" href="<?php echo admin_url() ?>index.php?page=<?=$this->plugin?>-plugin&amp;tab=console"><?=__('Console', $this->plugin)?></a>
             <?php endif; ?>
-            <a class="nav-tab <?php if($_GET['tab'] == 'stats'): ?>nav-tab-active<?php endif; ?>" href="<?php echo admin_url() ?>index.php?page=<?=$this->plugin?>-plugin&amp;tab=stats"><?=__('Statistics', $this->plugin)?></a>
+            <a class="nav-tab <?php if($this->currentTab == 'stats'): ?>nav-tab-active<?php endif; ?>" href="<?php echo admin_url() ?>index.php?page=<?=$this->plugin?>-plugin&amp;tab=stats"><?=__('Statistics', $this->plugin)?></a>
             <?php if ($this->vclGeneratorTab): ?>
-                <a class="nav-tab <?php if($_GET['tab'] == 'conf'): ?>nav-tab-active<?php endif; ?>" href="<?php echo admin_url() ?>index.php?page=<?=$this->plugin?>-plugin&amp;tab=conf"><?=__('VCLs Generator', $this->plugin)?></a>
+                <a class="nav-tab <?php if($this->currentTab == 'conf'): ?>nav-tab-active<?php endif; ?>" href="<?php echo admin_url() ?>index.php?page=<?=$this->plugin?>-plugin&amp;tab=conf"><?=__('VCLs Generator', $this->plugin)?></a>
             <?php endif; ?>
         </h2>
 
-        <?php if(!isset($_GET['tab']) || $_GET['tab'] == 'options'): ?>
+        <?php if($this->currentTab == 'options'): ?>
             <form method="post" action="options.php">
                 <?php
                     settings_fields($this->prefix . 'options');
@@ -592,7 +594,7 @@ class VCaching {
                     jQuery('#' + id).val(outStr);
                 }
             </script>
-        <?php elseif($_GET['tab'] == 'console'): ?>
+        <?php elseif($this->currentTab == 'console'): ?>
             <form method="post" action="index.php?page=<?=$this->plugin?>-plugin&amp;tab=console">
                 <?php
                     settings_fields($this->prefix . 'console');
@@ -600,7 +602,7 @@ class VCaching {
                     submit_button(__('Purge', $this->plugin));
                 ?>
             </form>
-        <?php elseif($_GET['tab'] == 'stats'): ?>
+        <?php elseif($this->currentTab == 'stats'): ?>
             <h2><?= __('Statistics', $this->plugin) ?></h2>
 
             <div class="wrap">
@@ -672,7 +674,7 @@ class VCaching {
                     </script>
                 <?php endif; ?>
             </div>
-        <?php elseif($_GET['tab'] == 'conf'): ?>
+        <?php elseif($this->currentTab == 'conf'): ?>
             <form method="post" action="options.php">
                 <?php
                     settings_fields($this->prefix . 'conf');
