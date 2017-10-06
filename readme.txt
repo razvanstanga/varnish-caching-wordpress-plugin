@@ -4,7 +4,7 @@ Contributors: razvanstanga
 Tags: varnish, purge, cache, caching, optimization, performance, traffic
 Requires at least: 4.0
 Tested up to: 4.9
-Stable tag: 1.6.5
+Stable tag: 1.6.6
 License: GPLv2 or later
 
 Wordpress Varnish Cache 3.x/4.x/5.x integration
@@ -115,6 +115,10 @@ With the current configuration and the way Wordpress works, this can still happe
 * `vcaching_purge_urls` - add additional URLs to purge
 
 == Changelog ==
+
+= 1.6.6 =
+* no more SSl auto detection. If you use SSL with Varnish use the option 'Use SSL (https://) for purge requests.'
+* there are cases where the website uses SSL, but the Varnish servers do not
 
 = 1.6.5 =
 * added sslverify set default to false to wp_remote_request. thanks @Jules81

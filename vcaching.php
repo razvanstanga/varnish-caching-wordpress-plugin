@@ -3,7 +3,7 @@
 Plugin Name: Varnish Caching
 Plugin URI: http://wordpress.org/extend/plugins/vcaching/
 Description: WordPress Varnish Cache integration.
-Version: 1.6.5
+Version: 1.6.6
 Author: Razvan Stanga
 Author URI: http://git.razvi.ro/
 License: http://www.apache.org/licenses/LICENSE-2.0
@@ -36,6 +36,7 @@ class VCaching {
     protected $vclGeneratorTab = true;
     protected $purgeOnMenuSave = false;
     protected $currentTab;
+    protected $useSsl = false;
 
     public function __construct()
     {
@@ -136,6 +137,7 @@ class VCaching {
             add_action('admin_notices' , array($this, 'purge_message'));
         }
         $this->currentTab = isset($_GET['tab']) ? $_GET['tab'] : 'options';
+        $this->useSsl = get_option($this->prefix . 'ssl');
     }
 
     public function override_ttl($post)
@@ -390,7 +392,7 @@ class VCaching {
             $path = '';
         }
 
-        $schema = apply_filters('vcaching_schema', is_ssl() ? 'https://' : 'http://');
+        $schema = apply_filters('vcaching_schema', $this->useSsl ? 'https://' : 'http://');
 
         foreach ($this->ipsToHosts as $key => $ipToHost) {
             $purgeme = $schema . $ipToHost['ip'] . $path . $pregex;
@@ -408,7 +410,7 @@ class VCaching {
                 }
             } else {
                 if ($this->truncateNotice && $this->truncateCount <= 2 || $this->truncateNotice == false) {
-                    $this->noticeMessage .= '' . __('Trying to purge URL :', $this->plugin) . $purgeme;
+                    $this->noticeMessage .= '' . __('Trying to purge URL : ', $this->plugin) . $purgeme;
                     preg_match("/<title>(.*)<\/title>/i", $response['body'], $matches);
                     $this->noticeMessage .= ' => <br /> ' . isset($matches[1]) ? " => " . $matches[1] : $response['body'];
                     $this->noticeMessage .= '<br />';
@@ -721,6 +723,7 @@ class VCaching {
         add_settings_field($this->prefix . "stats_json_file", __("Statistics JSONs", $this->plugin), array($this, $this->prefix . "stats_json_file"), $this->prefix . 'options', $this->prefix . 'options');
         add_settings_field($this->prefix . "truncate_notice", __("Truncate notice message", $this->plugin), array($this, $this->prefix . "truncate_notice"), $this->prefix . 'options', $this->prefix . 'options');
         add_settings_field($this->prefix . "purge_menu_save", __("Purge on save menu", $this->plugin), array($this, $this->prefix . "purge_menu_save"), $this->prefix . 'options', $this->prefix . 'options');
+        add_settings_field($this->prefix . "ssl", __("Use SSL on purge requests", $this->plugin), array($this, $this->prefix . "ssl"), $this->prefix . 'options', $this->prefix . 'options');
         add_settings_field($this->prefix . "debug", __("Enable debug", $this->plugin), array($this, $this->prefix . "debug"), $this->prefix . 'options', $this->prefix . 'options');
 
         if(isset($_POST['option_page']) && $_POST['option_page'] == $this->prefix . 'options') {
@@ -736,6 +739,7 @@ class VCaching {
             register_setting($this->prefix . 'options', $this->prefix . "stats_json_file");
             register_setting($this->prefix . 'options', $this->prefix . "truncate_notice");
             register_setting($this->prefix . 'options', $this->prefix . "purge_menu_save");
+            register_setting($this->prefix . 'options', $this->prefix . "ssl");
             register_setting($this->prefix . 'options', $this->prefix . "debug");
         }
     }
@@ -848,6 +852,16 @@ class VCaching {
             <input type="checkbox" name="varnish_caching_purge_menu_save" value="1" <?php checked(1, get_option($this->prefix . 'purge_menu_save'), true); ?> />
             <p class="description">
                 <?=__('Purge menu related pages when a menu is saved.', $this->plugin)?>
+            </p>
+        <?php
+    }
+
+    public function varnish_caching_ssl()
+    {
+        ?>
+            <input type="checkbox" name="varnish_caching_ssl" value="1" <?php checked(1, get_option($this->prefix . 'ssl'), true); ?> />
+            <p class="description">
+                <?=__('Use SSL (https://) for purge requests.', $this->plugin)?>
             </p>
         <?php
     }
