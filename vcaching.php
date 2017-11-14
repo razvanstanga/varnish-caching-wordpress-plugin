@@ -3,7 +3,7 @@
 Plugin Name: Varnish Caching
 Plugin URI: http://wordpress.org/extend/plugins/vcaching/
 Description: WordPress Varnish Cache integration.
-Version: 1.6.6
+Version: 1.6.7
 Author: Razvan Stanga
 Author URI: http://git.razvi.ro/
 License: http://www.apache.org/licenses/LICENSE-2.0
@@ -912,7 +912,7 @@ class VCaching {
 
         if(isset($_POST['option_page']) && $_POST['option_page'] == $this->prefix . 'download') {
             $version = in_array($_POST['varnish_caching_varnish_version'], array(3,4,5)) ? $_POST['varnish_caching_varnish_version'] : 3;
-            $tmpfile = tempnam("tmp", "zip");
+            $tmpfile = tempnam(sys_get_temp_dir(), "zip");
             $zip = new ZipArchive();
             $zip->open($tmpfile, ZipArchive::OVERWRITE);
             $files = array(
