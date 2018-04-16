@@ -4,7 +4,8 @@ Contributors: razvanstanga
 Tags: varnish, purge, cache, caching, optimization, performance, traffic
 Requires at least: 4.0
 Tested up to: 4.9
-Stable tag: 1.6.7
+Requires PHP: 5.2.4
+Stable tag: 1.6.8
 License: GPLv2 or later
 
 Wordpress Varnish Cache 3.x/4.x/5.x integration
@@ -115,6 +116,9 @@ With the current configuration and the way Wordpress works, this can still happe
 * `vcaching_purge_urls` - add additional URLs to purge
 
 == Changelog ==
+
+= 1.6.8 =
+* fixed wp-cli calling an older method name
 
 = 1.6.7 =
 * use sys_get_temp_dir() to address open_basedir restictions to /tmp. thanks @maltfield
