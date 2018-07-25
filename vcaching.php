@@ -988,7 +988,7 @@ class VCaching {
             } else if ($version == 4 || $version == 5) {
                 $content = "import directors;\n\n";
             }
-            $backend = array();
+            $backend = array(3 => "", 4 => "");
             $ips = get_option($this->prefix . 'varnish_backends');
             $ips = explode(',', $ips);
             $id = 1;
