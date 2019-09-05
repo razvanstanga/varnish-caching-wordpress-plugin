@@ -3,9 +3,9 @@ Donate link: https://www.paypal.me/razvanstanga
 Contributors: razvanstanga
 Tags: varnish, purge, cache, caching, optimization, performance, traffic
 Requires at least: 4.0
-Tested up to: 4.9
+Tested up to: 5.3
 Requires PHP: 5.2.4
-Stable tag: 1.6.9
+Stable tag: 1.7.0
 License: GPLv2 or later
 
 Wordpress Varnish Cache 3.x/4.x/5.x integration
@@ -116,6 +116,9 @@ With the current configuration and the way Wordpress works, this can still happe
 * `vcaching_purge_urls` - add additional URLs to purge
 
 == Changelog ==
+
+= 1.7.0 =
+* various bugfixes
 
 = 1.6.9 =
 * fixed php notice
