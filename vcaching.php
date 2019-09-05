@@ -43,7 +43,7 @@ class VCaching {
         defined($this->plugin) || define($this->plugin, true);
 
         $this->blogId = $blog_id;
-        add_action('init', array(&$this, 'init'));
+        add_action('init', array(&$this, 'init'), 11);
         add_action('activity_box_end', array($this, 'varnish_glance'), 100);
     }
 
@@ -61,6 +61,8 @@ class VCaching {
                 'capability'    => 'manage_options'
             )
         );
+
+        $this->postTypes = get_post_types(array('show_in_rest' => true));
 
         $this->setup_ips_to_hosts();
         $this->purgeKey = ($purgeKey = trim(get_option($this->prefix . 'purge_key'))) ? $purgeKey : null;
@@ -531,13 +533,17 @@ class VCaching {
     public function wp_login()
     {
         $cookie = get_option($this->prefix . 'cookie');
-        setcookie($cookie, 1, time()+3600*24*100, COOKIEPATH, COOKIE_DOMAIN, false, true);
+        if (!empty($cookie)) {
+            setcookie($cookie, 1, time()+3600*24*100, COOKIEPATH, COOKIE_DOMAIN, false, true);
+        }
     }
 
     public function wp_logout()
     {
         $cookie = get_option($this->prefix . 'cookie');
-        setcookie($cookie, null, time()-3600*24*100, COOKIEPATH, COOKIE_DOMAIN, false, true);
+        if (!empty($cookie)) {
+            setcookie($cookie, null, time()-3600*24*100, COOKIEPATH, COOKIE_DOMAIN, false, true);
+        }
     }
 
     public function admin_menu()
