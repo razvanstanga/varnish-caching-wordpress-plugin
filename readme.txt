@@ -6,7 +6,7 @@ Requires at least: 4.0
 Tested up to: 5.2
 Requires PHP: 5.2.4
 Stable tag: 1.7.1
-License: GPLv2 or later
+License: GPL-3.0-or-later
 
 Wordpress Varnish Cache 3.x/4.x/5.x integration
 

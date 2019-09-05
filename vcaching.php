@@ -6,7 +6,7 @@ Description: WordPress Varnish Cache integration.
 Version: 1.7.1
 Author: Razvan Stanga
 Author URI: http://git.razvi.ro/
-License: http://www.apache.org/licenses/LICENSE-2.0
+License: GPL-3.0-or-later
 Text Domain: vcaching
 Network: true
 

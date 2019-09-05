@@ -2,7 +2,7 @@
     "name": "razvanstanga/varnish-caching-wordpress-plugin",
     "description": "",
     "type": "wordpress-plugin",
-    "license": "GPLv2",
+    "license": "GPL-3.0-or-later",
     "authors": [
         {
             "name": "Razvan Stanga",
