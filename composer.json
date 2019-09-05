@@ -1,0 +1,12 @@
+{
+    "name": "razvanstanga/varnish-caching-wordpress-plugin",
+    "description": "",
+    "type": "wordpress-plugin",
+    "license": "GPLv2",
+    "authors": [
+        {
+            "name": "Razvan Stanga",
+            "email": "varnish-caching@razvi.ro"
+        }
+    ]
+}
