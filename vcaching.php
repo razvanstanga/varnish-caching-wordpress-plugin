@@ -36,7 +36,6 @@ class VCaching {
     protected $vclGeneratorTab = true;
     protected $purgeOnMenuSave = false;
     protected $currentTab;
-    protected $useSsl = false;
 
     public function __construct()
     {
@@ -137,7 +136,6 @@ class VCaching {
             add_action('admin_notices' , array($this, 'purge_message'));
         }
         $this->currentTab = isset($_GET['tab']) ? $_GET['tab'] : 'options';
-        $this->useSsl = get_option($this->prefix . 'ssl');
     }
 
     public function override_ttl($post)
@@ -392,7 +390,7 @@ class VCaching {
             $path = '';
         }
 
-        $schema = apply_filters('vcaching_schema', $this->useSsl ? 'https://' : 'http://');
+        $schema = apply_filters('vcaching_schema', (get_option($this->prefix . 'ssl') ? 'https://' : 'http://'));
 
         foreach ($this->ipsToHosts as $key => $ipToHost) {
             $purgeme = $schema . $ipToHost['ip'] . $path . $pregex;
