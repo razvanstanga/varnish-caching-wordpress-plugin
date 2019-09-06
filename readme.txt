@@ -5,7 +5,7 @@ Tags: varnish, nginx, purge, cache, caching, optimization, performance, traffic
 Requires at least: 4.0
 Tested up to: 5.2
 Requires PHP: 5.2.4
-Stable tag: 1.8.0
+Stable tag: 1.8.2
 License: GPL-3.0-or-later
 
 Wordpress Varnish Cache 3.x/4.x/5.x and Nginx Proxy Cache integration
@@ -121,6 +121,15 @@ With the current configuration and the way Wordpress works, this can still happe
 * `vcaching_purge_urls` - add additional URLs to purge
 
 == Changelog ==
+
+= 1.8.2 =
+* readme.txt update
+
+= 1.8.1 =
+* typo fix
+
+= 1.8.0 =
+* Nginx Proxy Cache support, uninstall script, use ssl optimization
 
 = 1.7.0 =
 * various bugfixes
