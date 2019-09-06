@@ -394,7 +394,7 @@ class VCaching {
             $path = '';
         }
 
-        $schema = apply_filters('vcaching_schema', $this->useSsl ? 'https://' : 'http://'));
+        $schema = apply_filters('vcaching_schema', ($this->useSsl ? 'https://' : 'http://'));
 
         foreach ($this->ipsToHosts as $key => $ipToHost) {
             $purgeme = $schema . $ipToHost['ip'] . $path . $pregex;
