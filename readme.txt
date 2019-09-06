@@ -1,19 +1,19 @@
-=== Varnish Caching ===
+=== Varnish/Nginx Proxy Caching ===
 Donate link: https://www.paypal.me/razvanstanga
 Contributors: razvanstanga
-Tags: varnish, purge, cache, caching, optimization, performance, traffic
+Tags: varnish, nginx, purge, cache, caching, optimization, performance, traffic
 Requires at least: 4.0
 Tested up to: 5.2
 Requires PHP: 5.2.4
-Stable tag: 1.7.2
+Stable tag: 1.8.0
 License: GPL-3.0-or-later
 
-Wordpress Varnish Cache 3.x/4.x/5.x integration
+Wordpress Varnish Cache 3.x/4.x/5.x and Nginx Proxy Cache integration
 
 == Description ==
-Complete Wordpress Varnish Cache 3.x/4.x/5.x integration.
+Complete Wordpress Varnish Cache 3.x/4.x/5.x and Nginx Proxy Cache integration.
 
-This plugin handles all integration with Varnish Cache. It was designed for high traffic websites.
+This plugin handles all integration with Varnish Cache and Nginx Proxy Cache. It was designed for high traffic websites.
 
 Main features
 
@@ -39,16 +39,16 @@ You can control the following from the Varnish Caching admin panel :
 * Debugging option
 * console for precise manual purges
 
-This plugin also auto purges Varnish Cache when your site is modified.
+This plugin also auto purges Varnish Cache / Nginx Proxy Cache when your site is modified.
 
-Varnish Caching sends a PURGE request to Varnish Cache when a page or post is modified. This occurs when editing, publishing, commenting or deleting an item, and when changing themes.
-Not all pages are purged every time, depending on your Varnish configuration. When a post, page, or custom post type is edited, or a new comment is added, <em>only</em> the following pages will purge:
+Varnish Caching sends a PURGE request to Varnish Cache / Nginx Proxy Cache when a page or post is modified. This occurs when editing, publishing, commenting or deleting an item, and when changing themes.
+Not all pages are purged every time, depending on your Varnish / Nginx Proxy Cache configuration. When a post, page, or custom post type is edited, or a new comment is added, <em>only</em> the following pages will purge:
 
 * The front page
 * The post/page edited
 * Any categories or tags associated with the page
 
-<a href="https://www.varnish-cache.org/">Varnish Cache</a> is a web application accelerator also known as a caching HTTP reverse proxy. You install it in front of any server that speaks HTTP and configure it to cache the contents. This plugin <em>does not</em> install Varnish for you, nor does it configure Varnish for WordPress. It's expected you already did that on your own using the provided config files.
+<a href="https://www.varnish-cache.org/" target="_blank">Varnish Cache</a> / <a href="https://www.nginx.com/blog/nginx-caching-guide/" target="_blank">Nginx Proxy Cache</a> is a web application accelerator also known as a caching HTTP reverse proxy. You install it in front of any server that speaks HTTP and configure it to cache the contents. This plugin <em>does not</em> install Varnish/Nginx for you, nor does it configure Varnish/Nginx for WordPress. It's expected you already did that on your own using the provided config files.
 
 Inspired from the following :
 
@@ -57,9 +57,10 @@ Inspired from the following :
 
 == Installation ==
 
-* You must install Varnish Cache on your server(s)
+* You must install Varnish Cache/Nginx Proxy Cache on your server(s)
 * Go to the configuration generator. Fill in the backends/ACLs then download the configuration files
 * Use these configuration files to configure Varnish Cache server(s). Usualy the configuration files are in /etc/varnish. In most cases you must put the downloaded configuration files in /etc/varnish and restart Varnish Cache
+* The configuration generator does not support Nginx for now. Read the Nginx documentation on how to enable proxy cache
 
 Or use the provided Varnish Cache configuration files located in /wp-content/plugins/vcaching/varnish-conf folder.
 
@@ -67,9 +68,13 @@ You can also use the purge key method if you can't setup ACLs. You must fill in 
 
 == Frequently Asked Questions ==
 
-= What version of Varnish is supported? =
+= What version of Varnish Cache is supported? =
 
-This was built and tested on Varnish 3.x/4.x.
+This was built and tested on Varnish 3.x/4.x/5.x.
+
+= Is Nginx supported? =
+
+Nginx is supported if you configure Nginx to use the PURGE method. Read the official Nginx documentaton on how to do this. Also there are a lot of tutorials to do this.
 
 = Why doesn't every page flush when I make a new post? =
 

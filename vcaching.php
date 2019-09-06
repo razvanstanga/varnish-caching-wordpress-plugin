@@ -3,7 +3,7 @@
 Plugin Name: Varnish Caching
 Plugin URI: http://wordpress.org/extend/plugins/vcaching/
 Description: WordPress Varnish Cache integration.
-Version: 1.7.2
+Version: 1.8.0
 Author: Razvan Stanga
 Author URI: http://git.razvi.ro/
 License: GPL-3.0-or-later
@@ -36,6 +36,7 @@ class VCaching {
     protected $vclGeneratorTab = true;
     protected $purgeOnMenuSave = false;
     protected $currentTab;
+    protected $useSsl = false;
 
     public function __construct()
     {
@@ -61,6 +62,7 @@ class VCaching {
                 'capability'    => 'manage_options'
             )
         );
+        $this->useSsl = get_option($this->prefix . 'ssl');
 
         $this->postTypes = get_post_types(array('show_in_rest' => true));
 
@@ -392,7 +394,7 @@ class VCaching {
             $path = '';
         }
 
-        $schema = apply_filters('vcaching_schema', (get_option($this->prefix . 'ssl') ? 'https://' : 'http://'));
+        $schema = apply_filters('vcaching_schema', $this->useSsl ? 'https://' : 'http://'));
 
         foreach ($this->ipsToHosts as $key => $ipToHost) {
             $purgeme = $schema . $ipToHost['ip'] . $path . $pregex;
