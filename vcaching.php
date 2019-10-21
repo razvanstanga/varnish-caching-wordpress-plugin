@@ -346,6 +346,7 @@ class VCaching {
     protected function get_register_events()
     {
         $actions = array(
+            'publish_future_post',
             'save_post',
             'deleted_post',
             'trashed_post',
