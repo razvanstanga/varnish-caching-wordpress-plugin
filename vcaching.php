@@ -88,6 +88,9 @@ class VCaching {
             add_action($event, array($this, 'purge_post'), 10, 2);
         }
 
+        // add a hook to check whether the number of comments for a post is changed and fire a cache purge
+        add_action('transition_comment_status', array($this, 'purge_post_new_comment'), 10, 3);
+
         // purge all cache from admin bar
         if ($this->check_if_purgeable()) {
             add_action('admin_bar_menu', array($this, 'purge_varnish_cache_all_adminbar'), 100);
@@ -350,7 +353,6 @@ class VCaching {
             'save_post',
             'deleted_post',
             'trashed_post',
-            'edit_post',
             'delete_attachment',
             'switch_theme',
         );
@@ -511,6 +513,18 @@ class VCaching {
         // @param int $postId the id of the new/edited post
         $this->purgeUrls = apply_filters('vcaching_purge_urls', $this->purgeUrls, $postId);
         $this->purge_cache();
+    }
+
+    public function purge_post_new_comment($new_status, $old_status, $comment)
+    {
+        if (!is_object($comment)) return; // nothing to do
+        if (empty($comment->comment_post_ID)) return; // nothing to do
+
+        // in case the comment status changed, and either old or new status is "approved", we need to regenerate cache for the corresponding post
+        if (($old_status != $new_status) && (($old_status === 'approved') || ($new_status === 'approved'))) {
+            $this->purge_post($comment->comment_post_ID);
+            return;
+        }
     }
 
     public function send_headers()
