@@ -37,6 +37,7 @@ class VCaching {
     protected $purgeOnMenuSave = false;
     protected $currentTab;
     protected $useSsl = false;
+    protected $vcaching_note = '';
 
     public function __construct()
     {
@@ -46,6 +47,11 @@ class VCaching {
         $this->blogId = $blog_id;
         add_action('init', array(&$this, 'init'), 11);
         add_action('activity_box_end', array($this, 'varnish_glance'), 100);
+
+        // export a purge all action to be called from other plugins
+        add_action('vcaching_purge_all', function (){
+            $this->purge_url(home_url() .'/?vc-regex');
+        });
     }
 
     public function init()
@@ -84,12 +90,20 @@ class VCaching {
         add_action('wp_logout', array($this, 'wp_logout'), 1000000);
 
         // register events to purge post
-        foreach ($this->get_register_events() as $event) {
-            add_action($event, array($this, 'purge_post'), 10, 2);
+        foreach ($this->get_register_post_events() as $event) {
+            add_action($event, array($this, 'purge_post'), 10, 3);
+        }
+
+        // register events to purge taxonomy term
+        foreach ($this->get_register_term_events() as $event) {
+            add_action($event, array($this, 'purge_term'), 10, 5);
         }
 
         // add a hook to check whether the number of comments for a post is changed and fire a cache purge
         add_action('transition_comment_status', array($this, 'purge_post_new_comment'), 10, 3);
+
+        // add a hook to check if post is updated and fire a cache purge
+        add_action('transition_post_status', array($this, 'purge_post_when_updated'), 10, 3);
 
         // purge all cache from admin bar
         if ($this->check_if_purgeable()) {
@@ -108,9 +122,6 @@ class VCaching {
 
         // purge post/page cache from post/page actions
         if ($this->check_if_purgeable()) {
-            if(!session_id()) {
-                session_start();
-            }
             add_filter('post_row_actions', array(
                 &$this,
                 'post_row_actions'
@@ -121,7 +132,7 @@ class VCaching {
             ), 0, 2);
             if (isset($_GET['action']) && isset($_GET['post_id']) && ($_GET['action'] == 'purge_post' || $_GET['action'] == 'purge_page') && check_admin_referer($this->plugin)) {
                 $this->purge_post($_GET['post_id']);
-                $_SESSION['vcaching_note'] = $this->noticeMessage;
+                $this->vcaching_note = $this->noticeMessage;
                 $referer = str_replace('purge_varnish_cache=1', '', wp_get_referer());
                 wp_redirect($referer . (strpos($referer, '?') ? '&' : '?') . 'vcaching_note=' . $_GET['action']);
             }
@@ -299,9 +310,9 @@ class VCaching {
 
     public function purge_post_page()
     {
-        if (isset($_SESSION['vcaching_note'])) {
-            echo '<div id="message" class="updated fade"><p><strong>' . __('Varnish Caching', $this->plugin) . '</strong><br /><br />' . $_SESSION['vcaching_note'] . '</p></div>';
-            unset ($_SESSION['vcaching_note']);
+        if ($this->vcaching_note != '') {
+            echo '<div id="message" class="updated fade"><p><strong>' . __('Varnish Caching', $this->plugin) . '</strong><br /><br />' . $this->vcaching_note . '</p></div>';
+            $this->vcaching_note='';
         }
     }
 
@@ -346,17 +357,27 @@ class VCaching {
         echo '<p class="varnish-glance">' . $text . '</p>';
     }
 
-    protected function get_register_events()
+    protected function get_register_post_events()
     {
         $actions = array(
-            'publish_future_post',
-            'save_post',
             'deleted_post',
-            'trashed_post',
             'delete_attachment',
             'switch_theme',
         );
         return apply_filters('vcaching_events', $actions);
+    }
+
+    protected function get_register_term_events()
+    {
+        /*$actions = array(
+            'delete_term_taxonomy',
+            'edit_term_taxonomy'
+        );*/
+        $actions = array(
+            'delete_term',
+            'edited_term'
+        );
+        return apply_filters('vcaching_term_events', $actions);
     }
 
     public function purge_cache()
@@ -430,84 +451,204 @@ class VCaching {
         do_action('vcaching_after_purge_url', $url, $purgeme);
     }
 
-    public function purge_post($postId, $post=null)
-    {
-        // Do not purge menu items
-        if (get_post_type($post) == 'nav_menu_item' && $this->purgeOnMenuSave == false) {
-            return;
-        }
+    public function purge_term($term_id, $tt_id, $taxonomy, $deleted_term, $args = null) {
 
-        // If this is a valid post we want to purge the post, the home page and any associated tags & cats
-        // If not, purge everything on the site.
-        $validPostStatus = array('publish', 'trash');
-        $thisPostStatus  = get_post_status($postId);
-
-        // If this is a revision, stop.
-        if(get_permalink($postId) !== true && !in_array($thisPostStatus, $validPostStatus)) {
-            return;
+        if ( $deleted_term instanceof WP_Term ) {
+            $term = $deleted_term;
         } else {
-            // array to collect all our URLs
-            $listofurls = array();
+            $term = get_term_by( 'term_taxonomy_id', $tt_id, OBJECT);
+        }
 
-            // Category purge based on Donnacha's work in WP Super Cache
-            $categories = get_the_category($postId);
-            if ($categories) {
-                foreach ($categories as $cat) {
-                    array_push($listofurls, get_category_link($cat->term_id));
-                }
-            }
-            // Tag purge based on Donnacha's work in WP Super Cache
-            $tags = get_the_tags($postId);
-            if ($tags) {
-                foreach ($tags as $tag) {
-                    array_push($listofurls, get_tag_link($tag->term_id));
-                }
-            }
+        if ( is_wp_error( $term ) ) {
+            return;
+        }
 
-            // Author URL
-            array_push($listofurls,
-                get_author_posts_url(get_post_field('post_author', $postId)),
-                get_author_feed_link(get_post_field('post_author', $postId))
-            );
+        $tax_ppp = apply_filters( 'vcaching_tax_' . $taxonomy . '_ppp', apply_filters( 'vcaching_taxdefault_ppp', get_option( 'posts_per_page' ) ) );
 
-            // Archives and their feeds
-            $archiveurls = array();
-            if (get_post_type_archive_link(get_post_type($postId)) == true) {
-                array_push($listofurls,
-                    get_post_type_archive_link( get_post_type($postId)),
-                    get_post_type_archive_feed_link( get_post_type($postId))
-                );
-            }
+        // array to collect all our URLs
+        $listofurls = array();
 
-            // Post URL
-            array_push($listofurls, get_permalink($postId));
+        $termLink = get_term_link( $term );
+        $termFeedLink = get_term_feed_link( $term, $taxonomy );
+        if ( !is_wp_error( $termLink ) && !is_wp_error($termFeedLink)) {
+            array_push( $listofurls, $termLink );
+            array_push( $listofurls, $termFeedLink );
+        } else {
+            return;
+        }
 
-            // Feeds
-            array_push($listofurls,
-                get_bloginfo_rss('rdf_url') ,
-                get_bloginfo_rss('rss_url') ,
-                get_bloginfo_rss('rss2_url'),
-                get_bloginfo_rss('atom_url'),
-                get_bloginfo_rss('comments_rss2_url'),
-                get_post_comments_feed_link($postId)
-            );
+        // try to determine the pagination needs for this term, only if using links without query args
+        if ( strpos ( $termLink, '?' ) !== false ) {
+            return;
+        }
 
-            // Home Page and (if used) posts page
-            array_push($listofurls, home_url('/'));
-            if (get_option('show_on_front') == 'page') {
-                array_push($listofurls, get_permalink(get_option('page_for_posts')));
-            }
+        // try to add pagination links if available
+        $termLink = trailingslashit( $termLink );
 
-            // If Automattic's AMP is installed, add AMP permalink
-            if (function_exists('amp_get_permalink')) {
-                array_push($listofurls, amp_get_permalink($postId));
-            }
-
-            // Now flush all the URLs we've collected
-            foreach ($listofurls as $url) {
-                array_push($this->purgeUrls, $url) ;
+        $nposts = $term->count;
+        $npages = min ( ceil( $nposts / $tax_ppp ), 5 );
+        if ( $npages > 1 ) {
+            foreach ( range( 2, $npages ) as $page ) {
+                array_push( $listofurls, user_trailingslashit ( $termLink . 'page/'. $page ) );
             }
         }
+
+        foreach ( $listofurls as $url ) {
+            array_push( $this->purgeUrls, $url );
+        }
+
+        $this->purge_cache();
+    }
+
+    public function purge_post($postId, $post = null, $comment_only = false) {
+        // don't purge cache for preview
+        if (is_preview()) {
+           return;
+        }
+
+        $post_type = get_post_type($postId);
+
+        // Do not purge menu items
+        if ($post_type == 'nav_menu_item' && $this->purgeOnMenuSave == false) {
+            return;
+        }
+
+        $postType = get_post_type_object(get_post_type($postId));
+        if (!is_post_type_viewable($postType)) {
+            return;
+        }
+
+        if (wp_is_post_autosave($postId) || wp_is_post_revision($postId)) {
+            return;
+        }
+
+        $savedPost = get_post($postId);
+        if (is_a($savedPost, 'WP_Post') == false) {
+            return;
+        }
+
+        if ( ( get_post_status( $postId ) == 'trash' ) && ( $post != null ) ) {
+            return;
+        }
+
+        // array to collect all our URLs
+        $listofurls = array();
+
+        // Post URL
+        array_push($listofurls, get_permalink($postId));
+
+        if ( get_post_status( $postId ) != 'trash' ) {
+            $comments_feed_url = get_post_comments_feed_link($postId);
+            if ( $comments_feed_url != '' ) {
+                array_push( $listofurls, $comments_feed_url );
+            }
+        }
+
+        // for comment moderation only we do not need to purge all terms and so on
+        if ( $comment_only ) {
+            $this->purgeUrls = array_unique( $listofurls );
+            $this->purgeUrls = apply_filters('vcaching_purge_urls', $this->purgeUrls, $postId);
+            $this->purge_cache();
+            return;
+        }
+
+        //Purge taxonomies terms and feeds URLs
+        $postTypeTaxonomies = get_object_taxonomies($post_type);
+
+        foreach ($postTypeTaxonomies as $taxonomy) {
+            // Only if taxonomy is public
+            $taxonomy_data = get_taxonomy($taxonomy);
+            if ($taxonomy_data instanceof WP_Taxonomy && false === $taxonomy_data->public) {
+                continue;
+            }
+
+            $terms = get_the_terms($postId, $taxonomy);
+
+            if (empty($terms) || is_wp_error($terms)) {
+                continue;
+            }
+
+            $tax_ppp = apply_filters( 'vcaching_tax_' . $taxonomy . '_ppp', apply_filters( 'vcaching_taxdefault_ppp', get_option( 'posts_per_page' ) ) );
+
+            foreach ($terms as $term) {
+                $termLink = get_term_link($term);
+                $termFeedLink = get_term_feed_link($term->term_id, $term->taxonomy);
+                if (!is_wp_error($termLink) && !is_wp_error($termFeedLink)) {
+                    array_push($listofurls, $termLink);
+                    array_push($listofurls, $termFeedLink);
+                }
+
+                // try to determine the pagination needs for this term, only if using links without query args
+                if ( strpos ( $termLink, '?' ) !== false ) {
+                    continue;
+                }
+
+                $termLink = trailingslashit( $termLink );
+
+                $nposts = $term->count;
+                $npages = min ( ceil( $nposts / $tax_ppp ), 5 );
+                if ( $npages > 1 ) {
+                    foreach ( range( 2, $npages ) as $page ) {
+                        array_push( $listofurls, user_trailingslashit ( $termLink . 'page/'. $page ) );
+                    }
+                }
+
+            }
+        }
+
+        // in case this post type has an archive link, add it
+        $archive_link = get_post_type_archive_link( $post_type );
+        if ( $archive_link !== false ) {
+            $archive_link = user_trailingslashit( $archive_link );
+            array_push( $listofurls, $archive_link );
+
+            // for homepage the archive_feed_link function returns improper result (query arg used wrongly)
+            if ( $archive_link == home_url( user_trailingslashit( '/' ) ) ) {
+                $feed_link = get_bloginfo_rss( 'rss2_url' );
+                if ( $feed_link !== false ) {
+                    array_push( $listofurls, $feed_link );
+                }
+            } else {
+                $feed_link = get_post_type_archive_feed_link( $post_type );
+                if ( $feed_link !== false ) {
+                    array_push( $listofurls, $feed_link );
+                }
+            }
+
+            // handle pagination
+            $nposts = wp_count_posts( $post_type )->publish;
+            $ppp = apply_filters( 'vcaching_post_type_' . $post_type . '_ppp', get_option('posts_per_page') );
+            $npages = min( ceil( $nposts / $ppp ), 5 );
+            if ( $npages > 1 ) {
+                foreach ( range( 2, $npages ) as $page ) {
+                    array_push( $listofurls, user_trailingslashit ( $archive_link . 'page/'. $page ) );
+                }
+            }
+        }
+
+
+        if ( get_option('show_on_front') == 'page' ) {
+            array_push( $listofurls, get_permalink( get_option( 'page_for_posts') ) );
+        }
+
+        if ( apply_filters( 'vcaching_flush_homepage_for_post_type', true, $post_type ) ) {
+            // Home Page and (if used) posts page
+            array_push( $listofurls, home_url('/') );
+
+            // make sure feed is present in array
+            $feed_link = get_bloginfo_rss( 'rss2_url' );
+            if ( $feed_link !== false ) {
+                array_push( $listofurls, $feed_link );
+            }
+        }
+
+        // Author URL
+        array_push( $listofurls,
+            get_author_posts_url( get_post_field( 'post_author', $postId ) ),
+            get_author_feed_link( get_post_field( 'post_author', $postId ) )
+        );
+
+        $this->purgeUrls = array_unique( $listofurls );
         // Filter to add or remove urls to the array of purged urls
         // @param array $purgeUrls the urls (paths) to be purged
         // @param int $postId the id of the new/edited post
@@ -522,10 +663,21 @@ class VCaching {
 
         // in case the comment status changed, and either old or new status is "approved", we need to regenerate cache for the corresponding post
         if (($old_status != $new_status) && (($old_status === 'approved') || ($new_status === 'approved'))) {
-            $this->purge_post($comment->comment_post_ID);
+            $this->purge_post($comment->comment_post_ID, null, true);
             return;
         }
     }
+
+    public function purge_post_when_updated($new_status, $old_status, $post)
+    {
+        // don't run on REST API request (Gutenberg editor duplicates firing the transition_post_status hook due to bug: https://github.com/WordPress/gutenberg/issues/15094)
+        if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) return;
+
+        if ('publish' === $new_status || 'publish' === $old_status) {
+            $this->purge_post($post->ID);
+        }
+    }
+
 
     public function send_headers()
     {
